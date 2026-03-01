@@ -55,36 +55,58 @@ function cleanProps(obj) {
 // Company payload mapping (if needed in the future)
 function companyPayload(data = {}) {
   return {
-    ivinex_id: data?.ID,
-    firstname: data?.FirstName,
-    lastname: data?.LastName,
-    email: data?.Email,
-    phone: data?.Phone,
+    properties: {
+      ivinex_id: data?.ID ?? "",
+      firstname: data?.FirstName ?? "",
+      lastname: data?.LastName ?? "",
+      email: data?.Email ?? "",
+      phone: data?.Phone ?? "",
+    },
   };
 }
 
 
-// contact payload mapping (if needed in the future)
+function mapContactsToHubspot(contacts = []) {
+  return contacts.map((c) => {
+    const fullName =
+      typeof c.name === "string" ? c.name.trim() : "";
 
-   function mapContactsToHubspot(contacts = []) {
-  return contacts.map((c) => ({
-    properties: {
-      orderwiseid: c.id,
-      firstname: c.name?.split(" ")[0] || "",
-      lastname: c.name?.split(" ").slice(1).join(" ") || "",
-      phone: c.telephone || "",
-      email: extractValidEmail(c.email),
-      company_orderwiseid: c.companyId,
-    },
-  }));
+    const nameParts = fullName.split(" ");
+
+    return {
+      properties: {
+        orderwiseid: c?.id ?? "",
+        firstname: nameParts[0] || "",
+        lastname: nameParts.slice(1).join(" ") || "",
+        phone:
+          typeof c.telephone === "string"
+            ? c.telephone.trim()
+            : "",
+        email: extractValidEmail(c?.email),
+        company_orderwiseid: c?.companyId ?? "",
+      },
+    };
+  });
 }
 
 function extractValidEmail(email) {
   if (!email) return "";
+
+  if (Array.isArray(email)) {
+    email = email[0];
+  }
+
+  if (typeof email === "object") {
+    email = email.value || email.email || "";
+  }
+
+  if (typeof email !== "string") {
+    return "";
+  }
+
   const match = email.match(/[\w.-]+@[\w.-]+\.\w+/);
   return match ? match[0] : email.trim();
 }
-
 
 
 

@@ -14,7 +14,11 @@ import {
   associateContactToCompany,
 } from "../services/hubspot.service.js";
 
-import { companyPayload,mapContactsToHubspot,extractValidEmail } from "../utils/helper.js";
+import {
+  companyPayload,
+  mapContactsToHubspot,
+  extractValidEmail,
+} from "../utils/helper.js";
 
 async function syncOrderwise() {
   try {
@@ -27,27 +31,31 @@ async function syncOrderwise() {
 
     const companies = await getCompanies();
     logger.info(
-      `First 2 Companies:\n${JSON.stringify(companies.slice(0, 2), null, 2)}`,
+      `First 2 Companies:\n${JSON.stringify(companies.length, null, 2)}`,
     );
     // build payload for company
 
     const payload = companyPayload(companies);
 
-    logger.info(
-      `Mapped Payload:\n${JSON.stringify(payload, null, 2)}`,
+    logger.info(`Company Payload:\n${JSON.stringify(payload, null, 2)}`);
+
+
+    const contacts = await getContacts(); 
+   logger.info(
+      `First 2 Contacts:\n${JSON.stringify(contacts.length, null, 2)}`,
     );
 
-    const contacts = await getContacts();
-    logger.info(`Fetched ${contacts.length} contacts from Orderwise`);
-    // build payload for contacts
+    // call the function// build payload for contacts
     const mappedContacts = mapContactsToHubspot(contacts);
+
     logger.info(
       `First 2 Mapped Contacts:\n${JSON.stringify(mappedContacts.slice(0, 2), null, 2)}`,
     );
-    const validEmailContacts = mappedContacts.filter(c => c.properties.email);
-    logger.info(
-      `Contacts with valid emails:\n${JSON.stringify(validEmailContacts.slice(0, 2), null, 2)}`,
-    );
+
+    // Extract valid emails for logging
+    const validEmails = mappedContacts.map((contact) => extractValidEmail(contact.properties.email));
+    logger.info(`Extracted Valid Emails:\n${JSON.stringify(validEmails.slice(0, 2), null, 2)}`);
+    
     const postCompanies = await postCompaniesToHubspot(
       searchObjectByKey,
       updateObject,

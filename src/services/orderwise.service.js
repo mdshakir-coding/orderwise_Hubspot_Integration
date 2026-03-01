@@ -98,7 +98,7 @@ async function getCompanies(retry = true) {
         if (retry) {
           logger.info("Refreshing token and retrying...");
           await login();
-          return fetchOrderwiseCustomers(false);
+          return getCompanies(false);
         }
         throw new Error(`Failed: ${response.status}`);
       }
@@ -116,7 +116,7 @@ async function getCompanies(retry = true) {
       logger.info(`Fetched batch. Total: ${allCustomers.length}`);
     }
 
-    return allCustomers;
+    return allCustomers ||[];
   } catch (error) {
     logger.error("Error fetching Orderwise customers:", error.message);
     return [];
@@ -231,7 +231,7 @@ async function getContacts(retry = true) {
       }
     }
 
-    return allContacts;
+    return allContacts || [];
   } catch (error) {
     logger.error("Error fetching contacts:", error.message);
     return [];
