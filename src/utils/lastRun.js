@@ -12,7 +12,7 @@ function getLastId() {
   try {
     const data = fs.readFileSync(lastRunFile, "utf8");
     return JSON.parse(data).last_id || 0;
-  } catch {
+  } catch (error) {
     return 0;
   }
 }
