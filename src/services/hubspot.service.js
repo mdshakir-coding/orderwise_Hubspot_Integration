@@ -196,54 +196,7 @@ async function associateContactToCompany(companyId, contactId) {
 
 // create a upsert function
 
-// async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) {
-//   try {
-//     // 1. SEARCH: Check if object exists
-//     let hubspotId = await searchObjectByKey(
-//       objectType,
-//       searchKey,
-//       searchValue
-//     );
 
-//     // 2. UPDATE: If object exists, update it
-//     if (hubspotId) {
-//       logger.info(`Updating existing ${objectType}: ${hubspotId}`);
-//       await updateObject(objectType, hubspotId, payload);
-//       return hubspotId;
-//     }
-
-//     // 3. CREATE: If object doesn't exist, create it
-//     logger.info(`Attempting to create ${objectType} for ${searchKey}: ${searchValue}`);
-//     try {
-//       const createdObject = await createObject(objectType, payload);
-//       return createdObject.id;
-//     } catch (createError) {
-//       // 4. CONFLICT HANDLING: If 409 CONFLICT, re-search and update
-//       if (createError.message && createError.message.includes("409")) {
-//         logger.warn(`Conflict detected for ${searchValue}. Re-searching...`);
-        
-//         hubspotId = await searchObjectByKey(
-//           objectType,
-//           searchKey,
-//           searchValue
-//         );
-
-//         if (hubspotId) {
-//           logger.info(`Found existing ${objectType} after conflict: ${hubspotId}`);
-//           await updateObject(objectType, hubspotId, payload);
-//           return hubspotId;
-//         } else {
-//           throw new Error(`Conflict occurred but ${objectType} still not found by search.`);
-//         }
-//       } else {
-//         throw createError; // Re-throw other errors
-//       }
-//     }
-//   } catch (error) {
-//     logger.error(`Error upserting ${objectType} ${searchValue}: ${error.message}`);
-//     return null; // Return null on failure
-//   }
-// }
 
 async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) {
   try {
@@ -280,12 +233,46 @@ async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) 
   }
 }
 
+// 
 
+
+async function logEmailToHubSpot(contactId, companyId, emailData) {
+  try {
+    const payload = {
+      properties: {
+        hs_communication_channel_type: "EMAIL",
+        hs_communication_logged_from: "INTEGRATION",
+        hs_communication_body: emailData.body || "No content provided",
+        hs_communication_subject: emailData.subject || "Orderwise Notification",
+        hs_timestamp: new Date().toISOString(),
+      },
+      associations: [
+        {
+          to: { id: contactId },
+          types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 81 }] // Communication to Contact
+        },
+        {
+          to: { id: companyId },
+          types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 83 }] // Communication to Company
+        }
+      ]
+    };
+
+    const response = await hubspotClient.post('/crm/v3/objects/communications', payload);
+    logger.info(`Email logged successfully for Contact ${contactId} and Company ${companyId}`);
+    return response.data;
+  } catch (error) {
+    logger.error(`Failed to log email: ${error.message}`);
+    return null;
+  }
+}
 
 
 export {
   searchObjectByKey,
   createObject,
   updateObject,
-  associateContactToCompany,upsertHubSpotObject
+  associateContactToCompany,
+  upsertHubSpotObject,
+  logEmailToHubSpot
 };
