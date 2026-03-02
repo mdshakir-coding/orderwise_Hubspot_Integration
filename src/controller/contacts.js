@@ -12,6 +12,7 @@ import {
   createObject,
   updateObject,
   associateContactToCompany,
+  upsertHubSpotObject,
 } from "../services/hubspot.service.js";
 
 import {
@@ -20,52 +21,91 @@ import {
   extractValidEmail,
 } from "../utils/helper.js";
 
-// async function syncContacts() {
 
+
+// async function syncContacts() {
 //   try {
 //     await login();
 //     logger.info("Orderwise login successful");
+//     // 1. Fetch companies
+//     const companies = await getCompanies();
+//     logger.info(`Fetched ${companies.length} companies`);
 
-//     const contacts = await getContacts ();
+//     // 1. Fetch contacts
+//     const contacts = await getContacts(companies);
 //     logger.info(`Contacts Count: ${contacts.length}`);
-//     logger.info(
-//       `First 2 Contacts:\n${JSON.stringify(contacts.slice(0, 2), null, 2)}`,
-//     );
 
-// // return;
 //     for (const contact of contacts) {
 //       try {
 //         const payload = mapContactsToHubspot(contact);
+//         const orderwiseId = String(contact.id);
 
-//         logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
-//         // search company in hubspot
-//         const searchResult = await searchObjectByKey(
-//           "contacts", // object
-//           "orderwiseid", // property
-//           contact.id, // value
+//         // 1. Search for existing contact in HubSpot
+//         let hubspotContactId = await searchObjectByKey(
+//           "contacts",
+//           "orderwiseid",
+//           orderwiseId,
 //         );
-//         logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
-//         // return;
 
-//         // update contact in hubspot
-//         if (searchResult) {
-//           const updatedContact = await updateObject(
-//             "contacts",
-//             searchResult, // <-- already the ID string
-//             payload // <-- you need to send payload
+//         // 2. Upsert Logic: If search fails, try to update anyway if 409 happens
+//         if (hubspotContactId) {
+//           logger.info(`Updating existing contact: ${hubspotContactId}`);
+//           await updateObject("contacts", hubspotContactId, payload);
+//         } else {
+//           logger.info(`Attempting to create contact: ${orderwiseId}`);
+
+//           try {
+//             const createdContact = await createObject("contacts", payload);
+//             hubspotContactId = createdContact.id;
+//           } catch (createError) {
+//             // --- DIRECT 409 HANDLING ---
+//             if (createError.message && createError.message.includes("409")) {
+//               logger.warn(
+//                 `Conflict detected for ${orderwiseId}. Retrying search...`,
+//               );
+
+//               // Force a search again because the contact exists, just not found by ID
+//               hubspotContactId = await searchObjectByKey(
+//                 "contacts",
+//                 "orderwiseid",
+//                 orderwiseId,
+//               );
+
+//               if (hubspotContactId) {
+//                 logger.info(
+//                   `Found existing contact after conflict: ${hubspotContactId}`,
+//                 );
+//                 await updateObject("contacts", hubspotContactId, payload);
+//               } else {
+//                 throw new Error(
+//                   "Conflict occurred but contact still not found.",
+//                 );
+//               }
+//             } else {
+//               throw createError; // Re-throw other errors
+//             }
+//           }
+//         }
+
+//         // 3. Association Logic
+//         if (hubspotContactId && contact.companyId) {
+//           const hubspotCompanyId = await searchObjectByKey(
+//             "companies",
+//             "orderwiseid",
+//             String(contact.companyId),
 //           );
-//           logger.info(
-//             `Updated Contact:\n${JSON.stringify(updatedContact, null, 2)}`,
-//           );
-//           // return;
-//           // create contact in hubspot
-//           const createdContact = await createObject("contacts", payload);
-//           logger.info(
-//             `Created Contact:\n${JSON.stringify(createdContact, null, 2)}`,
-//           );
+
+//           if (hubspotCompanyId) {
+//             await associateContactToCompany(hubspotCompanyId, hubspotContactId);
+//             logger.info(
+//               `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
+//             );
+//           }
 //         }
 //       } catch (error) {
-//         logger.error(`Error processing contact: ${contact.id} - ${error.message}`);
+//         logger.error(
+//           `Error processing contact ${contact.id}: ${error.message}`,
+//         );
 //       }
 //     }
 
@@ -75,73 +115,56 @@ import {
 //   }
 // }
 
+
 async function syncContacts() {
   try {
     await login();
     logger.info("Orderwise login successful");
+    
     // 1. Fetch companies
     const companies = await getCompanies();
     logger.info(`Fetched ${companies.length} companies`);
 
-    // 1. Fetch contacts
+    // 2. Fetch contacts
     const contacts = await getContacts(companies);
     logger.info(`Contacts Count: ${contacts.length}`);
 
     for (const contact of contacts) {
-  try {
-    const payload = mapContactsToHubspot(contact);
-    const orderwiseId = String(contact.id);
+      try {
+        const payload = mapContactsToHubspot(contact);
+        const orderwiseId = String(contact.id);
 
-    // 1. SEARCH: Check if contact exists
-    const hubspotContactId = await searchObjectByKey(
-      "contacts",
-      "orderwiseid",
-      orderwiseId
-    );
+        // --- USE THE NEW UPSERT FUNCTION ---
+        const hubspotContactId = await upsertHubSpotObject(
+          "contacts",
+          "orderwiseid",
+          orderwiseId,
+          payload
+        );
 
-    let finalContactId;
+        // 3. Association Logic
+        if (hubspotContactId && contact.companyId) {
+          const hubspotCompanyId = await searchObjectByKey(
+            "companies",
+            "orderwiseid",
+            String(contact.companyId),
+          );
 
-    if (hubspotContactId) {
-      // 2a. UPDATE: It exists
-      logger.info(`Updating contact: ${hubspotContactId}`);
-      await updateObject("contacts", hubspotContactId, payload);
-      finalContactId = hubspotContactId;
-    } else {
-      // 2b. CREATE: It doesn't exist
-      logger.info(`Creating new contact for Orderwise ID: ${orderwiseId}`);
-      const createdContact = await createObject("contacts", payload);
-      
-      // Fix: Only read ID if creation was successful
-      if (createdContact && createdContact.id) {
-        finalContactId = createdContact.id;
-      } else {
-        throw new Error("Contact creation failed, no ID returned.");
+          if (hubspotCompanyId) {
+            await associateContactToCompany(hubspotCompanyId, hubspotContactId);
+            logger.info(
+              `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
+            );
+          } else {
+            logger.warn(`Company ${contact.companyId} not found in HubSpot. Skipping association.`);
+          }
+        }
+      } catch (error) {
+        logger.error(
+          `Error processing contact ${contact.id}: ${error.message}`,
+        );
       }
     }
-
-    // 3. ASSOCIATE: Link to company
-    if (finalContactId && contact.companyId) {
-      // Need the HubSpot ID for the company
-      const hubspotCompanyId = await searchObjectByKey(
-        "companies",
-        "orderwiseid",
-        String(contact.companyId)
-      );
-
-      if (hubspotCompanyId) {
-        await associateContactToCompany(hubspotCompanyId, finalContactId);
-        logger.info(`Associated Contact ${finalContactId} with Company ${hubspotCompanyId}`);
-      } else {
-        logger.warn(`Skipping association: Company ${contact.companyId} not found in HubSpot.`);
-      }
-    }
-  } catch (error) {
-    logger.error(`Error processing contact ${contact.id}: ${error.message}`);
-  }
-}
-
-
-    
 
     logger.info("Orderwise Sync Completed Successfully");
   } catch (error) {
@@ -150,3 +173,7 @@ async function syncContacts() {
 }
 
 export { syncContacts };
+
+
+
+

@@ -194,9 +194,98 @@ async function associateContactToCompany(companyId, contactId) {
   logger.info(`Contact ${contactId} associated with company ${companyId}`);
 }
 
+// create a upsert function
+
+// async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) {
+//   try {
+//     // 1. SEARCH: Check if object exists
+//     let hubspotId = await searchObjectByKey(
+//       objectType,
+//       searchKey,
+//       searchValue
+//     );
+
+//     // 2. UPDATE: If object exists, update it
+//     if (hubspotId) {
+//       logger.info(`Updating existing ${objectType}: ${hubspotId}`);
+//       await updateObject(objectType, hubspotId, payload);
+//       return hubspotId;
+//     }
+
+//     // 3. CREATE: If object doesn't exist, create it
+//     logger.info(`Attempting to create ${objectType} for ${searchKey}: ${searchValue}`);
+//     try {
+//       const createdObject = await createObject(objectType, payload);
+//       return createdObject.id;
+//     } catch (createError) {
+//       // 4. CONFLICT HANDLING: If 409 CONFLICT, re-search and update
+//       if (createError.message && createError.message.includes("409")) {
+//         logger.warn(`Conflict detected for ${searchValue}. Re-searching...`);
+        
+//         hubspotId = await searchObjectByKey(
+//           objectType,
+//           searchKey,
+//           searchValue
+//         );
+
+//         if (hubspotId) {
+//           logger.info(`Found existing ${objectType} after conflict: ${hubspotId}`);
+//           await updateObject(objectType, hubspotId, payload);
+//           return hubspotId;
+//         } else {
+//           throw new Error(`Conflict occurred but ${objectType} still not found by search.`);
+//         }
+//       } else {
+//         throw createError; // Re-throw other errors
+//       }
+//     }
+//   } catch (error) {
+//     logger.error(`Error upserting ${objectType} ${searchValue}: ${error.message}`);
+//     return null; // Return null on failure
+//   }
+// }
+
+async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) {
+  try {
+    // 1. Primary Search: Search by Orderwise ID
+    let hubspotId = await searchObjectByKey(objectType, searchKey, searchValue);
+
+    // 2. Secondary Search: If ID search fails, search by Email (only for contacts)
+    if (!hubspotId && objectType === "contacts" && payload.properties.email) {
+      logger.info(`ID search failed for ${searchValue}, searching by email: ${payload.properties.email}`);
+      hubspotId = await searchObjectByKey(objectType, "email", payload.properties.email);
+    }
+
+    if (hubspotId) {
+      logger.info(`Updating existing ${objectType}: ${hubspotId}`);
+      await updateObject(objectType, hubspotId, payload);
+      return hubspotId;
+    }
+
+    // 3. Create: Only if both searches return nothing
+    try {
+      const createdObject = await createObject(objectType, payload);
+      return createdObject?.id || null;
+    } catch (createError) {
+      if (createError.message && createError.message.includes("409")) {
+         // This block is now your safety net if email search somehow missed it
+         logger.warn(`409 Conflict on create for ${searchValue}. Record exists but is hidden from search.`);
+         return null; 
+      }
+      throw createError;
+    }
+  } catch (error) {
+    logger.error(`Error upserting ${objectType} ${searchValue}: ${error.message}`);
+    return null;
+  }
+}
+
+
+
+
 export {
   searchObjectByKey,
   createObject,
   updateObject,
-  associateContactToCompany
+  associateContactToCompany,upsertHubSpotObject
 };

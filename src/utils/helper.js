@@ -112,12 +112,12 @@ function extractValidEmail(email) {
 
 
 // utils/helper.js
-function mapContactsToHubspot(c,item) {
+function mapContactsToHubspot(c,comapny) {
   // Check if contact exists
   if (!c) return null;
 
-  const fullName = typeof c.name === "string" ? c.name.trim() : "";
-  const nameParts = fullName.split(" ");
+  // const fullName = typeof c.name === "string" ? c.name.trim() : "";
+  // const nameParts = fullName.split(" ");
 
   return {
     properties: {
@@ -126,7 +126,7 @@ function mapContactsToHubspot(c,item) {
       lastname: c?.name ||null,
        phone: c?.telephone || null,
       email: extractValidEmail(c?.email),
-      company_orderwiseid: item?.companyId || null,
+      company_orderwiseid: comapny?.id || null,
     },
   };
 
