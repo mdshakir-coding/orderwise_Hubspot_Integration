@@ -1,4 +1,3 @@
-
 function cleanProps(obj) {
   const cleaned = {};
 
@@ -50,44 +49,26 @@ function cleanProps(obj) {
   return cleaned;
 }
 
-
-
 // Company payload mapping (if needed in the future)
-function companyPayload(data = {}) {
+function companyPayload(item = {}) {
+  let domain = null;
+
+  if (extractValidEmail(item.statementEmail?.trim())) {
+    domain = item.statementEmail.trim().split("@")[1];
+  } else {
+    domain = "";
+  }
   return {
     properties: {
-      ivinex_id: data?.ID ?? "",
-      firstname: data?.FirstName ?? "",
-      lastname: data?.LastName ?? "",
-      email: data?.Email ?? "",
-      phone: data?.Phone ?? "",
+      orderwiseid: item?.id || null,
+      name: item?.statementName || null,
+      phone: item?.statementTelephone || null,
+      domain,
     },
   };
 }
 
-
-function mapContactsToHubspot(contacts = []) {
-  return contacts.map((c) => {
-    const fullName =
-      typeof c.name === "string" ? c.name.trim() : "";
-
-    const nameParts = fullName.split(" ");
-
-    return {
-      properties: {
-        orderwiseid: c?.id ?? "",
-        firstname: nameParts[0] || "",
-        lastname: nameParts.slice(1).join(" ") || "",
-        phone:
-          typeof c.telephone === "string"
-            ? c.telephone.trim()
-            : "",
-        email: extractValidEmail(c?.email),
-        company_orderwiseid: c?.companyId ?? "",
-      },
-    };
-  });
-}
+// company payload mapping (if needed in the future)
 
 function extractValidEmail(email) {
   if (!email) return "";
@@ -109,5 +90,50 @@ function extractValidEmail(email) {
 }
 
 
+// conatct payload mapping (if needed in the future)
+// function mapContactsToHubspot(contacts = []) {
+//   return contacts.map((c) => {
+//     const fullName = typeof c.name === "string" ? c.name.trim() : "";
 
-export { cleanProps,companyPayload,mapContactsToHubspot,extractValidEmail };
+//     const nameParts = fullName.split(" ");
+
+//     return {
+//       properties: {
+//         orderwiseid: c?.id || null,
+//         firstname: nameParts[0] || null,
+//         lastname: nameParts.slice(1).join(" ") || null,
+//         phone: typeof c.telephone === "string" ? c.telephone.trim() : null,
+//         email: extractValidEmail(c?.email),
+//         company_orderwiseid: c?.companyId ?? null,
+//       },
+//     };
+//   });
+// }
+
+
+// utils/helper.js
+function mapContactsToHubspot(c,item) {
+  // Check if contact exists
+  if (!c) return null;
+
+  const fullName = typeof c.name === "string" ? c.name.trim() : "";
+  const nameParts = fullName.split(" ");
+
+  return {
+    properties: {
+      orderwiseid: c?.id || null,
+       firstname: c?.name || null,
+      lastname: c?.name ||null,
+       phone: c?.telephone || null,
+      email: extractValidEmail(c?.email),
+      company_orderwiseid: item?.companyId || null,
+    },
+  };
+
+}
+
+
+
+
+
+export { cleanProps, companyPayload, mapContactsToHubspot, extractValidEmail };

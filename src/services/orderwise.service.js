@@ -31,57 +31,16 @@ let contacts = [];
   }
 }
 
-/** Fetch companies from Orderwise */
-//  async function getCompanies(retry = true) {
-//   try {
-//     if (!token && retry) await login();
-
-//     const url = `http://sslvpn.caretrade.co/OWAPI/customers?limit=10000&last_id=${getLastId()}`;
-//     const response = await fetch(url, {
-//       method: "GET",
-//       headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-//     });
-
-//     if (!response.ok) {
-//       if (retry) {
-//         logger.info("Retrying after refreshing token...");
-//         await login();
-//         return getCompanies(false);
-//       }
-//       throw new Error("Failed to fetch customers: " + response.status);
-//     }
-
-//     const data = await response.json();
-//     companies = (data || []).map((item) => ({
-//       properties: {
-//         orderwiseid: item.id,
-//         name: item.statementName,
-//         phone: item.statementTelephone,
-//         domain: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.statementEmail)
-//           ? item.statementEmail.split("@")[1]
-//           : "",
-//       },
-//     }));
-
-//     const last_id = companies[companies.length - 1]?.properties?.orderwiseid;
-//     if (last_id) setLastId(last_id);
-
-//     return companies;
-//   } catch (error) {
-//     logger.error("Error fetching customers:", error);
-//     return null;
-//   }
-// }
-
-
-// add pagination logic 
+// fetch companies
 
 async function getCompanies(retry = true) {
   try {
     if (!token && retry) await login();
 
     let allCustomers = [];
-    let lastId = getLastId() || 0;
+    let lastId = 0;
+    // let lastId = getLastId() || 0;
+
     let hasMore = true;
 
     while (hasMore) {
@@ -108,10 +67,10 @@ async function getCompanies(retry = true) {
       if (!data || data.length === 0) break;
 
       allCustomers.push(...data);
-      // return allCustomers; //todo remove after testing
+      return allCustomers; //todo remove after testing
 
       lastId = data[data.length - 1].id;
-      setLastId(lastId);
+      // setLastId(lastId); // we can set lastId after processing all batches to avoid skipping records in case of failure
 
       logger.info(`Fetched batch. Total: ${allCustomers.length}`);
     }
@@ -122,72 +81,24 @@ async function getCompanies(retry = true) {
     return [];
   }
 }
+// fetch contacts 
 
+ 
 
-
-/** Fetch contacts for all companies */
-//  async function getContacts(retry = true) {
-//   try {
-//     if (!token && retry) await login();
-//     if (!companies.length) return [];
-
-//     contacts = [];
-
-//     for (const company of companies) {
-//       const url = `http://sslvpn.caretrade.co/OWAPI/customers/${company.properties.orderwiseid}/customer-contacts`;
-//       const response = await fetch(url, {
-//         method: "GET",
-//         headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-//       });
-
-//       if (!response.ok) {
-//         if (retry) {
-//           logger.info("Retrying after refreshing token...");
-//           await login();
-//           return getContacts(false);
-//         }
-//         logger.warn(`Failed to fetch contacts for company ${company.properties.orderwiseid}`);
-//         continue;
-//       }
-
-//       const data = await response.json();
-//       const companyContacts = (data || []).map((c) => ({
-//         properties: {
-//           orderwiseid: c.id,
-//           firstname: c.name?.split(" ")[0] || "",
-//           lastname: c.name?.split(" ")[1] || "",
-//           phone: c.telephone || "",
-//           email: (() => {
-//             const match = c?.email?.match(/[\w.-]+@[\w.-]+\.\w+/);
-//             return match ? match[0] : c.email?.trim();
-//           })(),
-//           companyOrderwiseId: company.properties.orderwiseid,
-//         },
-//       }));
-
-//       contacts.push(...companyContacts);
-//     }
-
-//     return contacts;
-//   } catch (error) {
-//     logger.error("Error fetching contacts:", error);
-//     return [];
-//   }
-// }
-
-// add pagination logic
-async function getContacts(retry = true) {
+ async function getContacts(companies) {
   try {
-    if (!token && retry) await login();
-    if (!companies.length) return [];
+    if (!token) await login();
+    if (!companies || companies.length === 0) return [];
 
     let allContacts = [];
 
     for (const company of companies) {
-      let lastId = 0;
+      // 1. lastId must be reset to 0 for every NEW company
+      let lastId = 0; 
       let hasMore = true;
 
       while (hasMore) {
+        // 2. Add last_id to the URL query parameters
         const url = `http://sslvpn.caretrade.co/OWAPI/customers/${company.id}/customer-contacts?limit=1000&last_id=${lastId}`;
 
         const response = await fetch(url, {
@@ -199,16 +110,8 @@ async function getContacts(retry = true) {
         });
 
         if (!response.ok) {
-          if (retry) {
-            logger.info("Refreshing token and retrying contacts...");
-            await login();
-            return getContacts(false);
-          }
-
-          logger.warn(
-            `Failed contacts for company ${company.id}`
-          );
-          break;
+          logger.warn(`Failed contacts for company ${company.id}`);
+          break; // Move to next company
         }
 
         const data = await response.json();
@@ -216,27 +119,32 @@ async function getContacts(retry = true) {
         if (!data || data.length === 0) break;
 
         allContacts.push(
-
           ...data.map((contact) => ({
             ...contact,
             companyId: company.id,
           }))
         );
-        // return allContacts; //todo remove after testing
+        return allContacts; //todo remove after testing
+        // 3. Update lastId to the ID of the last contact in the current batch
         lastId = data[data.length - 1].id;
 
-        logger.info(
-          `Fetched ${data.length} contacts for company ${company.id}`
-        );
+        logger.info(`Fetched batch of ${data.length} for company ${company.id}`);
+
+        // 4. If we got fewer than 1000, no more pages exist
+        if (data.length < 1000) hasMore = false;
       }
     }
-
-    return allContacts || [];
+    return allContacts;
   } catch (error) {
     logger.error("Error fetching contacts:", error.message);
     return [];
   }
 }
+
+
+
+
+
 
 /** Post companies to HubSpot */
  async function postCompaniesToHubspot(searchObjectByKey, updateObjectByKey, createHubSpotObject) {

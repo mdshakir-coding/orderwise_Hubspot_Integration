@@ -20,60 +20,63 @@ import {
   extractValidEmail,
 } from "../utils/helper.js";
 
+
 async function syncOrderwise() {
   try {
-    // call the function
-
-    const asyncLogin = await login();
-    logger.info(
-      `Orderwise login successful: ${JSON.stringify(asyncLogin, null, 2)}`,
-    );
+    await login();
+    logger.info("Orderwise login successful");
 
     const companies = await getCompanies();
+    logger.info(`Companies Count: ${companies.length}`);
     logger.info(
-      `First 2 Companies:\n${JSON.stringify(companies.length, null, 2)}`,
-    );
-    // build payload for company
-
-    const payload = companyPayload(companies);
-
-    logger.info(`Company Payload:\n${JSON.stringify(payload, null, 2)}`);
-
-
-    const contacts = await getContacts(); 
-   logger.info(
-      `First 2 Contacts:\n${JSON.stringify(contacts.length, null, 2)}`,
+      `First 2 Companies:\n${JSON.stringify(companies.slice(0, 2), null, 2)}`,
     );
 
-    // call the function// build payload for contacts
-    const mappedContacts = mapContactsToHubspot(contacts);
 
-    logger.info(
-      `First 2 Mapped Contacts:\n${JSON.stringify(mappedContacts.slice(0, 2), null, 2)}`,
-    );
+    for (const company of companies) {
+      try {
+        const payload = companyPayload(company);
 
-    // Extract valid emails for logging
-    const validEmails = mappedContacts.map((contact) => extractValidEmail(contact.properties.email));
-    logger.info(`Extracted Valid Emails:\n${JSON.stringify(validEmails.slice(0, 2), null, 2)}`);
+        logger.info(`Company Payload:\n${JSON.stringify(payload, null, 2)}`);
+
+        // search company in hubspot
+        const searchResult = await searchObjectByKey(
+          "companies", // object
+          "orderwiseid", // property
+          company.id, // value
+        );
+        logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
+        // return;
+
     
-    const postCompanies = await postCompaniesToHubspot(
-      searchObjectByKey,
-      updateObject,
-      createObject,
-      payload,
-    );
-    logger.info(`Synced companies to HubSpot successfully: ${postCompanies}`);
-    const postContacts = await postContactsToHubspot(
-      searchObjectByKey,
-      updateObject,
-      createObject,
-      associateContactToCompany,
-    );
-    logger.info(`Synced contacts to HubSpot successfully: ${postContacts}`);
+        // update company in hubspot
+        if (searchResult) {
+          const updatedCompany = await updateObject(
+            "companies",
+            searchResult, // <-- already the ID string
+            payload // <-- you need to send payload
+          );
+          logger.info(
+            `Updated Company:\n${JSON.stringify(updatedCompany, null, 2)}`,
+          );
+          // return;
+          // create company in hubspot
+          const createdCompany = await createObject("companies", payload);
+          logger.info(
+            `Created Company:\n${JSON.stringify(createdCompany, null, 2)}`,
+          );
+        }
+      } catch (error) {
+        logger.error(`Error processing company: ${company.id} - ${error.message}`);
+      }
+    }
 
-    // call the function
+
+    
+
+    logger.info("Orderwise Sync Completed Successfully");
   } catch (error) {
-    logger.error("Orderwise sync failed:", error);
+    logger.error("Orderwise sync failed:", error.message);
   }
 }
 

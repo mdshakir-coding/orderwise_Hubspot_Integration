@@ -6,6 +6,7 @@ import logger from "./config/logger.js";
 
 // import {getLastId, setLastId } from "./utils/lastRun.js";
 import { syncOrderwise } from "./controller/orderwise.controller.js";
+import{ syncContacts } from "./controller/contacts.js";
 
 
 
@@ -14,7 +15,9 @@ const PORT = process.env.PORT || 32100;
 
 app.listen(PORT, () => {
 
-   syncOrderwise();
+//    syncOrderwise();
+syncContacts();
+
 
  
     logger.info(`Server running on port ${PORT}`);
