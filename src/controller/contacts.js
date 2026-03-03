@@ -48,39 +48,6 @@ async function syncContacts() {
           payload,
         );
 
-        // // 3. Association Logic
-        // if (hubspotContactId && contact.companyId) {
-        //   const hubspotCompanyId = await searchObjectByKey(
-        //     "companies",
-        //     "orderwiseid",
-        //     String(contact.companyId),
-        //   );
-
-        //   if (hubspotCompanyId) {
-        //     await associateContactToCompany(hubspotCompanyId, hubspotContactId);
-        //     logger.info(
-        //       `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
-        //     );
-        //   } else {
-        //     logger.warn(
-        //       `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
-        //     );
-        //   }
-        // }
-
-        // // MOVE THE CALL HERE: Inside the block where hubspotCompanyId is alive
-        // await syncEmailWithLogging({
-        //   subject: `OrderWise Activity - Contact: ${contact.id}`,
-        //   body: `Synced activity for ${contact.firstName || ""} ${contact.lastName || ""}. Email: ${contact.email || "N/A"}`,
-        //   contactId: hubspotContactId,
-        //   companyId: hubspotCompanyId, // Now it is defined!
-        //   orderWiseId: String(contact.id),
-        // });
-
-        // logger.warn(
-        //   `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
-        // );
-
         // 3. Association Logic
         if (hubspotContactId && contact.companyId) {
           const hubspotCompanyId = await searchObjectByKey(
