@@ -234,38 +234,65 @@ async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) 
 }
 
 // 
+/**
+ * Syncs OrderWise CRM activity to HubSpot with clear log output.
+ */
+async function syncEmailWithLogging({ subject, body, contactId, companyId, orderWiseId }) {
+    // const HUBSPOT_ACCES_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN;
+    const url = 'https://api.hubapi.com/crm/v3/objects/emails';
+    
+    // Generate timestamp for the log
+    const timestamp = new Date().toLocaleString('en-US', { hour12: true }).replace(',', '');
 
-
-async function logEmailToHubSpot(contactId, companyId, emailData) {
-  try {
     const payload = {
-      properties: {
-        hs_communication_channel_type: "EMAIL",
-        hs_communication_logged_from: "INTEGRATION",
-        hs_communication_body: emailData.body || "No content provided",
-        hs_communication_subject: emailData.subject || "Orderwise Notification",
-        hs_timestamp: new Date().toISOString(),
-      },
-      associations: [
-        {
-          to: { id: contactId },
-          types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 81 }] // Communication to Contact
+        properties: {
+            "hs_timestamp": new Date().toISOString(),
+            "hs_email_subject": subject,
+            "hs_email_direction": "EMAIL",
+            "hs_email_status": "SENT",
+            "hs_email_text": body,
+            // "orderwise_id": orderWiseId // Optional: helps tracking
         },
-        {
-          to: { id: companyId },
-          types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 83 }] // Communication to Company
-        }
-      ]
+        associations: [
+            {
+                "to": { "id": contactId },
+                "types": [{ "associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 198 }]
+            },
+            {
+                "to": { "id": companyId },
+                "types": [{ "associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 186 }]
+            }
+        ]
     };
 
-    const response = await hubspotClient.post('/crm/v3/objects/communications', payload);
-    logger.info(`Email logged successfully for Contact ${contactId} and Company ${companyId}`);
-    return response.data;
-  } catch (error) {
-    logger.error(`Failed to log email: ${error.message}`);
-    return null;
-  }
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            // Success Log
+            console.log(`${timestamp} | info | Email Activity created: ${result.id} associated with Contact ${contactId} and Company ${companyId}`);
+            return result;
+        } else {
+            // Error Log
+            console.error(`${timestamp} | error | HubSpot Sync Failed for OrderWise ID ${orderWiseId}: ${result.message}`);
+        }
+
+    } catch (error) {
+        console.error(`${timestamp} | error | System Exception: ${error.message}`);
+    }
 }
+
+
+
 
 
 export {
@@ -274,5 +301,6 @@ export {
   updateObject,
   associateContactToCompany,
   upsertHubSpotObject,
-  logEmailToHubSpot
+  syncEmailWithLogging
+  
 };
