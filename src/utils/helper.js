@@ -50,6 +50,61 @@ function cleanProps(obj) {
 }
 
 // Company payload mapping (if needed in the future)
+
+// comapny maaping fields:
+// {
+//   "id": 2012,
+//   "accountNumber": "A1A001",
+//   "statementName": "Anchor Fixings Ltd",
+//   "statementAddress1": "Rathenraw Ind Est ",
+//   "statementAddress2": "Greystone Road",
+//   "statementAddress3": "",
+//   "statementTown": "Antrim",
+//   "statementPostcode": "BT41 2SJ ",
+//   "statementCounty": "Co Antrim",
+//   "statementCountry": "",
+//   "statementEmail": "accounts@anchorfixings.com",
+//   "statementWebsite": "",
+//   "statementTelephone": "028 9084 2373",
+//   "statementFax": "028 9084 4311",
+//   "statementCountryCode": "GB",
+//   "invoiceName": null,
+//   "invoiceAddress1": null,
+//   "invoiceAddress2": null,
+//   "invoiceAddress3": null,
+//   "invoiceTown": null,
+//   "invoicePostcode": null,
+//   "invoiceCounty": null,
+//   "invoiceCountry": null,
+//   "invoiceEmail": null,
+//   "invoiceWebsite": null,
+//   "invoiceTelephone": null,
+//   "invoiceFax": null,
+//   "invoiceCountryCode": null,
+//   "vatNumber": null,
+//   "defaultTaxCodeId": 2,
+//   "overrideVariantTax": false,
+//   "nominalCodeId": 6,
+//   "departmentCodeId": 1,
+//   "costCentreId": 0,
+//   "currencyId": 1,
+//   "defaultDeliveryMethodId": 1,
+//   "defaultDeliveryGroupId": null,
+//   "usePriceList": null,
+//   "priceListId": 1463,
+//   "priceListDiscountPercent": 0,
+//   "multisaverDiscountGroupId": null,
+//   "discountStructureId": null,
+//   "defaultStockLocationId": 12,
+//   "accountCustomer": true,
+//   "onHold": false,
+//   "manualOnHold": false,
+//   "overCreditTerms": false,
+//   "creditLimit": 50000,
+//   "openOrdersValue": 0,
+//   "availableToSpend": 50000,
+//   "balance": 0
+// }
 function companyPayload(item = {}) {
   let domain = null;
 
@@ -64,6 +119,13 @@ function companyPayload(item = {}) {
       name: item?.statementName || null,
       phone: item?.statementTelephone || null,
       domain,
+      address: item?.statementAddress1 || null,
+      address2: item?.statementAddress2 || null,
+      city: item?.statementTown || null,
+      country: item?.statementCounty || null,
+      state: item?.statementCountryCode || null,
+      zip: item?.statementPostcode || null,
+      // fax: item?.statementFax || null,
     },
   };
 }
@@ -104,7 +166,11 @@ function mapContactsToHubspot(c,item) {
       lastname: c?.name ||null,
        phone: c?.telephone || null,
       email: extractValidEmail(c?.email),
-      company_orderwiseid: item?.id || null,
+      company: item?.id || null,
+      // city: c?.city || null,
+      // country: c?.country || null,
+      // state: c?.state || null,
+      // address: c?.address || null,
     },
   };
 

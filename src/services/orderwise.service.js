@@ -70,7 +70,7 @@ async function getCompanies(retry = true) {
       return allCustomers; //todo remove after testing
 
       lastId = data[data.length - 1].id;
-      // setLastId(lastId); // we can set lastId after processing all batches to avoid skipping records in case of failure
+      // setLastId(lastId); // Save lastId after each successful fetch
 
       logger.info(`Fetched batch. Total: ${allCustomers.length}`);
     }

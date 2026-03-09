@@ -30,15 +30,13 @@ async function syncContacts() {
     // 1. Fetch companies
     const companies = await getCompanies();
     logger.info(`Fetched ${companies.length} companies`);
-
+    // logger.info(`Companies:\n${JSON.stringify(companies[0], null, 2)}`);
+    
     for (const company of companies) {
       try {
         // upsert comany in hubspot
 
         let companyId = null;
-
-        // search company in hubspot
-        // create if not. exist else update
 
         const payload = companyPayload(company);
 
@@ -51,14 +49,14 @@ async function syncContacts() {
           company.id, // value
         );
         logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
-        // return;
         companyId = searchResult.id;
 
         // update company in hubspot
         if (searchResult) {
-          const updatedCompany = await updateObject(
+          let updatedCompany = null;
+          updatedCompany = await updateObject(
             "companies",
-            searchResult.id, // <-- already the ID string
+            searchResult, // <-- already the ID string
             payload, // <-- you need to send payload
           );
           logger.info(
@@ -77,7 +75,7 @@ async function syncContacts() {
         upsertContact = await processContacts(companies, companyId);
         logger.info(`Upsert Contact Result: ${upsertContact}`);
         // log upsert contact result
-        return;
+        // return; // todo: remove this return after testing
       } catch (error) {
         logger.error(
           `Error processing company ${company.id}: ${error.message}`,
@@ -99,8 +97,9 @@ async function processContacts(companies, hubspotCompanyId) {
 
     for (const contact of contacts) {
       try {
-        const payload = mapContactsToHubspot(contact);
+        const payload = mapContactsToHubspot(contact, companies[0]);
         const orderwiseId = String(contact.id);
+        logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
         // --- USE THE NEW UPSERT FUNCTION ---
         const hubspotContactId = await upsertHubSpotObject(
@@ -124,15 +123,6 @@ async function processContacts(companies, hubspotCompanyId) {
               `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
             );
 
-            //     // ✅ SUCCESS: Move the call INSIDE this block.
-            //     // Here, hubspotCompanyId is alive and defined.
-            //     await syncEmailWithLogging({
-            //       subject: `OrderWise Activity - Contact: ${contact.id}`,
-            //       body: `Synced activity for ${contact.firstName || ""} ${contact.lastName || ""}. Email: ${contact.email || "N/A"}`,
-            //       contactId: hubspotContactId,
-            //       companyId: hubspotCompanyId,
-            //       orderWiseId: String(contact.id),
-            //     });
           } else {
             logger.warn(
               `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
@@ -148,11 +138,13 @@ async function processContacts(companies, hubspotCompanyId) {
           // );
 
           if (hubspotCompanyId) {
-            let associationResult = (associationResult =
-              await associateContactToCompany(
-                hubspotCompanyId,
-                hubspotContactId,
-              ));
+            let associationResult = null;
+
+            associationResult = await associateContactToCompany(
+              hubspotCompanyId,
+              hubspotContactId,
+            );
+
             logger.info(
               `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
             );
@@ -165,12 +157,13 @@ async function processContacts(companies, hubspotCompanyId) {
               companyId: hubspotCompanyId,
               orderWiseId: String(contact.id),
             });
-            logger.info(`Email sync result: ${emailWithLogging}`);
+            logger.info(
+              `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`,
+            );
           } else {
-          
             logger.warn(
               `Company ${contact.companyId} not found in HubSpot Skipping association.`,
-          );
+            );
           }
         }
       } catch (error) {
