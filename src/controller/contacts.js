@@ -31,7 +31,7 @@ async function syncContacts() {
     const companies = await getCompanies();
     logger.info(`Fetched ${companies.length} companies`);
     // logger.info(`Companies:\n${JSON.stringify(companies[0], null, 2)}`);
-    
+
     for (const company of companies) {
       try {
         // upsert comany in hubspot
@@ -74,11 +74,11 @@ async function syncContacts() {
         let upsertContact = null;
         upsertContact = await processContacts(companies, companyId);
         logger.info(`Upsert Contact Result: ${upsertContact}`);
-        // log upsert contact result
         // return; // todo: remove this return after testing
       } catch (error) {
         logger.error(
           `Error processing company ${company.id}: ${error.message}`,
+
         );
       }
     }
@@ -97,12 +97,14 @@ async function processContacts(companies, hubspotCompanyId) {
 
     for (const contact of contacts) {
       try {
+        // Contact Payload Mapping
         const payload = mapContactsToHubspot(contact, companies[0]);
         const orderwiseId = String(contact.id);
         logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
         // --- USE THE NEW UPSERT FUNCTION ---
-        const hubspotContactId = await upsertHubSpotObject(
+        let hubspotContactId = null;
+         hubspotContactId = await upsertHubSpotObject(
           "contacts",
           "orderwiseid",
           orderwiseId,
@@ -110,61 +112,52 @@ async function processContacts(companies, hubspotCompanyId) {
         );
 
         // 3. Association Logic
-        if (hubspotContactId && contact.companyId) {
-          const hubspotCompanyId = await searchObjectByKey(
-            "companies",
-            "orderwiseid",
-            String(contact.companyId),
+        // if (hubspotContactId && contact.companyId) {
+        //   const hubspotCompanyId = await searchObjectByKey(
+        //     "companies",
+        //     "orderwiseid",
+        //     String(contact.companyId),
+        //   );
+
+          // if (hubspotCompanyId) {
+          //   await associateContactToCompany(hubspotCompanyId, hubspotContactId);
+          //   logger.info(
+          //     `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
+          //   );
+          // } else {
+          //   logger.warn(
+          //     `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
+          //   );
+          // }
+        // }
+        // Assocation logic Company and Contact
+        if (hubspotCompanyId && hubspotContactId) {
+          let associationResult = null;
+
+          associationResult = await associateContactToCompany(
+            hubspotCompanyId,
+            hubspotContactId,
           );
 
-          if (hubspotCompanyId) {
-            await associateContactToCompany(hubspotCompanyId, hubspotContactId);
-            logger.info(
-              `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
-            );
+          logger.info(
+            `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
+          );
 
-          } else {
-            logger.warn(
-              `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
-            );
-          }
-        }
-        // 3. Association Logic
-        if (hubspotContactId) {
-          // const hubspotCompanyId = await searchObjectByKey(
-          //   "companies",
-          //   "orderwiseid",
-          //   String(companyId),
-          // );
-
-          if (hubspotCompanyId) {
-            let associationResult = null;
-
-            associationResult = await associateContactToCompany(
-              hubspotCompanyId,
-              hubspotContactId,
-            );
-
-            logger.info(
-              `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
-            );
-
-            // ✅ SUCCESS: Move the call INSIDE this block.
-            const emailWithLogging = await syncEmailWithLogging({
-              subject: `OrderWise Activity - Contact: ${contact.id}`,
-              body: `Synced activity for ${contact.firstName || ""} ${contact.lastName || ""}. Email: ${contact.email || "N/A"}`,
-              contactId: hubspotContactId,
-              companyId: hubspotCompanyId,
-              orderWiseId: String(contact.id),
-            });
-            logger.info(
-              `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`,
-            );
-          } else {
-            logger.warn(
-              `Company ${contact.companyId} not found in HubSpot Skipping association.`,
-            );
-          }
+          // ✅ SUCCESS: Move the call INSIDE this block.
+          const emailWithLogging = await syncEmailWithLogging({
+            subject: `OrderWise Activity - Contact: ${contact.id}`,
+            body: `Synced activity for ${contact.firstName || ""} ${contact.lastName || ""}. Email: ${contact.email || "N/A"}`,
+            contactId: hubspotContactId,
+            companyId: hubspotCompanyId,
+            orderWiseId: String(contact.id),
+          });
+          logger.info(
+            `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`,
+          );
+        } else {
+          logger.warn(
+            `Company ${contact.companyId} not found in HubSpot Skipping association.`,
+          );
         }
       } catch (error) {
         logger.error(
