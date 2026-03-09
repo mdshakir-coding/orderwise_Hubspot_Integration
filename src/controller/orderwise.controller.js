@@ -66,6 +66,10 @@ async function syncOrderwise() {
             `Created Company:\n${JSON.stringify(createdCompany, null, 2)}`,
           );
         }
+
+        // hubspot company id
+        // find contact , upsert contact and associate with company
+        //
       } catch (error) {
         logger.error(`Error processing company: ${company.id} - ${error.message}`);
       }

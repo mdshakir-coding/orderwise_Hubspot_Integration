@@ -85,6 +85,8 @@ async function getCompanies(retry = true) {
 
  
 
+
+    logger.info(`Contacts Count: ${contacts.length}`);
  async function getContacts(companies) {
   try {
     if (!token) await login();

@@ -3,6 +3,7 @@ dotenv.config();
 import express from "express";
 import app from "./utils/app.js";
 import logger from "./config/logger.js";
+import "./jobs/cron.job.js";
 
 // import {getLastId, setLastId } from "./utils/lastRun.js";
 import { syncOrderwise } from "./controller/orderwise.controller.js";

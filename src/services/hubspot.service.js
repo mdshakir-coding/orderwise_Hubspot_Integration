@@ -29,9 +29,10 @@ import logger from "../config/logger.js";
 async function searchObjectByKey(object, key, value) {
 
   if (!object || !key || !value) {
-    throw new Error(
+    logger.error(
       `Missing search parameters → object:${object}, key:${key}, value:${value}`
     );
+    return null;
   }
 
   
@@ -136,7 +137,7 @@ async function createObject(object, payload) {
     }
 
     const data = await response.json();
-    logger.info(`${object} created: ${data.id}`);
+    // logger.info(`${object} created: ${data.id}`);
     return data;
 
   } catch (error) {
@@ -167,7 +168,7 @@ async function updateObject(object, id, payload) {
     //   return null; // return null if update failed
     // }
     const data = await response.json();
-    logger.info(`${object} updated successfully: ${JSON.stringify(data,null,2)}`);
+    // logger.info(`${object} updated successfully: ${JSON.stringify(data,null,2)}`);
     return data;
 
   } catch (error) {
@@ -210,7 +211,7 @@ async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) 
     }
 
     if (hubspotId) {
-      logger.info(`Updating existing ${objectType}: ${hubspotId}`);
+      logger.info(`Updating existing Contact ${objectType}: ${hubspotId}`);
       await updateObject(objectType, hubspotId, payload);
       return hubspotId;
     }
@@ -232,6 +233,8 @@ async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) 
     return null;
   }
 }
+
+
 
 // 
 /**
@@ -279,15 +282,15 @@ async function syncEmailWithLogging({ subject, body, contactId, companyId, order
 
         if (response.ok) {
             // Success Log
-            console.log(`${timestamp} | info | Email Activity created: ${result.id} associated with Contact ${contactId} and Company ${companyId}`);
+            logger.info(`${timestamp} | info | Email Activity created: ${result.id} associated with Contact ${contactId} and Company ${companyId}`);
             return result;
         } else {
             // Error Log
-            console.error(`${timestamp} | error | HubSpot Sync Failed for OrderWise ID ${orderWiseId}: ${result.message}`);
+            logger.error(`${timestamp} | error | HubSpot Sync Failed for OrderWise ID ${orderWiseId}: ${result.message}`);
         }
 
     } catch (error) {
-        console.error(`${timestamp} | error | System Exception: ${error.message}`);
+        logger.error(`${timestamp} | error | System Exception: ${error.message}`);
     }
 }
 

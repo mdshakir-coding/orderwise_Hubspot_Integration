@@ -89,30 +89,8 @@ function extractValidEmail(email) {
   return match ? match[0] : email.trim();
 }
 
-
-// conatct payload mapping (if needed in the future)
-// function mapContactsToHubspot(contacts = []) {
-//   return contacts.map((c) => {
-//     const fullName = typeof c.name === "string" ? c.name.trim() : "";
-
-//     const nameParts = fullName.split(" ");
-
-//     return {
-//       properties: {
-//         orderwiseid: c?.id || null,
-//         firstname: nameParts[0] || null,
-//         lastname: nameParts.slice(1).join(" ") || null,
-//         phone: typeof c.telephone === "string" ? c.telephone.trim() : null,
-//         email: extractValidEmail(c?.email),
-//         company_orderwiseid: c?.companyId ?? null,
-//       },
-//     };
-//   });
-// }
-
-
-// utils/helper.js
-function mapContactsToHubspot(c,comapny) {
+// contact payload mapping
+function mapContactsToHubspot(c,item) {
   // Check if contact exists
   if (!c) return null;
 
@@ -126,7 +104,7 @@ function mapContactsToHubspot(c,comapny) {
       lastname: c?.name ||null,
        phone: c?.telephone || null,
       email: extractValidEmail(c?.email),
-      company_orderwiseid: comapny?.id || null,
+      company_orderwiseid: item?.id || null,
     },
   };
 
