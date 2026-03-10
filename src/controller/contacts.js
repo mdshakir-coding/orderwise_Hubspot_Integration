@@ -15,6 +15,7 @@ import {
   upsertHubSpotObject,
   syncEmailWithLogging,
 } from "../services/hubspot.service.js";
+import { createBulkCompanies } from "../services/hubspot.service.js";
 
 import {
   companyPayload,
@@ -43,7 +44,8 @@ async function syncContacts(companies) {
 
         logger.info(`Company Payload:\n${JSON.stringify(payload, null, 2)}`);
 
-        // search company in hubspot
+        // search company in
+
         const searchResult = await searchObjectByKey(
           "companies", // object
           "orderwiseid", // property
@@ -52,10 +54,10 @@ async function syncContacts(companies) {
         logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
         companyId = searchResult.id;
 
+        
         // update company in hubspot
         if (searchResult) {
-          let updatedCompany = null;
-          updatedCompany = await updateObject(
+          const updatedCompany = await updateObject(
             "companies",
             searchResult, // <-- already the ID string
             payload, // <-- you need to send payload
@@ -71,6 +73,8 @@ async function syncContacts(companies) {
           logger.info(
             `Created Company:\n${JSON.stringify(createdCompany, null, 2)}`,
           );
+           
+
         }
         let upsertContact = null;
         upsertContact = await processContacts(companies, companyId);
@@ -79,7 +83,6 @@ async function syncContacts(companies) {
       } catch (error) {
         logger.error(
           `Error processing company ${company.id}: ${error.message}`,
-
         );
       }
     }
@@ -105,7 +108,7 @@ async function processContacts(companies, hubspotCompanyId) {
 
         // --- USE THE NEW UPSERT FUNCTION ---
         let hubspotContactId = null;
-         hubspotContactId = await upsertHubSpotObject(
+        hubspotContactId = await upsertHubSpotObject(
           "contacts",
           "orderwiseid",
           orderwiseId,
@@ -120,16 +123,16 @@ async function processContacts(companies, hubspotCompanyId) {
         //     String(contact.companyId),
         //   );
 
-          // if (hubspotCompanyId) {
-          //   await associateContactToCompany(hubspotCompanyId, hubspotContactId);
-          //   logger.info(
-          //     `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
-          //   );
-          // } else {
-          //   logger.warn(
-          //     `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
-          //   );
-          // }
+        // if (hubspotCompanyId) {
+        //   await associateContactToCompany(hubspotCompanyId, hubspotContactId);
+        //   logger.info(
+        //     `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
+        //   );
+        // } else {
+        //   logger.warn(
+        //     `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
+        //   );
+        // }
         // }
         // Assocation logic Company and Contact
         if (hubspotCompanyId && hubspotContactId) {

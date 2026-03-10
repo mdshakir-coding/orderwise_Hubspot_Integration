@@ -166,11 +166,11 @@ function mapContactsToHubspot(c,item) {
       lastname: c?.name ||null,
        phone: c?.telephone || null,
       email: extractValidEmail(c?.email),
-      company: item?.id || null,
-      // city: c?.city || null,
-      // country: c?.country || null,
-      // state: c?.state || null,
-      // address: c?.address || null,
+      // compnayOrderwiseId: company.properties.orderwiseid,
+
+      // company: item?.id || null,
+
+    
     },
   };
 

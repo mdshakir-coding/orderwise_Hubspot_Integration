@@ -294,6 +294,42 @@ async function syncEmailWithLogging({ subject, body, contactId, companyId, order
     }
 }
 
+// Bulk Company Creation
+
+
+import axios from "axios";
+
+ async function createBulkCompanies() {
+  const url = "https://api.hubapi.com/crm/v3/objects/companies/batch/create";
+
+  const data = {
+    inputs: [
+      {
+        properties: {
+          name: ""
+        }
+      },
+    ]
+  };
+
+  try {
+    const response = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    console.log("Companies created:", response.data);
+    return response.data;
+
+  } catch (error) {
+    console.error(
+      "Error creating companies:",
+      error.response?.data || error.message
+    );
+  }
+}
 
 
 
@@ -304,6 +340,7 @@ export {
   updateObject,
   associateContactToCompany,
   upsertHubSpotObject,
-  syncEmailWithLogging
+  syncEmailWithLogging,
+  createBulkCompanies
   
 };
