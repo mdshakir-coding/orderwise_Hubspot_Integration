@@ -22,15 +22,16 @@ import {
   extractValidEmail,
 } from "../utils/helper.js";
 
-async function syncContacts() {
+async function syncContacts(companies) {
   try {
-    await login();
-    logger.info("Orderwise login successful");
+    // await login();
+    // logger.info("Orderwise login successful");
 
     // 1. Fetch companies
-    const companies = await getCompanies();
-    logger.info(`Fetched ${companies.length} companies`);
-    // logger.info(`Companies:\n${JSON.stringify(companies[0], null, 2)}`);
+    // const companies = await getCompanies();
+    // logger.info(`Fetched ${companies.length} companies`);
+    // // logger.info(`Companies:\n${JSON.stringify(companies[999], null, 2)}`);
+    // return;
 
     for (const company of companies) {
       try {

@@ -8,6 +8,7 @@ import "./jobs/cron.job.js";
 // import {getLastId, setLastId } from "./utils/lastRun.js";
 import { syncOrderwise } from "./controller/orderwise.controller.js";
 import{ syncContacts } from "./controller/contacts.js";
+import { getCompanies } from "./services/orderwise.service.js";
 
 
 
@@ -17,7 +18,9 @@ const PORT = process.env.PORT || 32100;
 app.listen(PORT, () => {
 
 //    syncOrderwise();
-syncContacts();
+// syncContacts();
+getCompanies();
+
 
 
  

@@ -3,6 +3,7 @@
 import { getLastId, setLastId } from "../utils/lastRun.js";
 // import fetch from "node-fetch"; // if using Node.js
 import logger from "../config/logger.js";
+import{ syncContacts } from "../controller/contacts.js";
 
 let token = null;
 let companies = [];
@@ -34,6 +35,8 @@ let contacts = [];
 // fetch companies
 
 async function getCompanies(retry = true) {
+  await login();
+  // logger.info("Orderwise login successful");
   try {
     if (!token && retry) await login();
 
@@ -67,12 +70,23 @@ async function getCompanies(retry = true) {
       if (!data || data.length === 0) break;
 
       allCustomers.push(...data);
-      return allCustomers; //todo remove after testing
+      // return allCustomers; //todo remove after testing
+     
+     try {
+      await syncContacts(data)
+     } catch (error) {
+        logger.error("Error syncing contacts:", error.message);
+      
+     }
+
+      // Process the records here (e.g., save to DB) before updating lastId
 
       lastId = data[data.length - 1].id;
       // setLastId(lastId); // Save lastId after each successful fetch
 
-      logger.info(`Fetched batch. Total: ${allCustomers.length}`);
+      logger.info(`Fetched batch. Total: ${JSON.stringify(allCustomers.length)}`);
+      // logger.info(`Fetched batch. Total: ${JSON.stringify(data[data.length - 1], null, 2)}`);
+
     }
 
     return allCustomers ||[];
@@ -81,11 +95,14 @@ async function getCompanies(retry = true) {
     return [];
   }
 }
+
+//
+
+
+
+
+
 // fetch contacts 
-
- 
-
-
     logger.info(`Contacts Count: ${contacts.length}`);
  async function getContacts(companies) {
   try {
