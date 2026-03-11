@@ -342,38 +342,39 @@ async function syncEmailWithLogging({
   }
 }
 
-// Bulk Company Creation
+// Bulk Company and contact Creation and Association Logic
 
 import axios from "axios";
 
-async function createBulkCompanies() {
-  const url = "https://api.hubapi.com/crm/v3/objects/companies/batch/create";
-
-  const data = {
-    inputs: [
-      {
-        properties: {
-          name: "",
-        },
-      },
-    ],
-  };
+ async function createContactCompanyAssociations(associations) {
+  const url = "https://api.hubapi.com/crm/v4/associations/contacts/companies/batch/create";
 
   try {
-    const response = await axios.post(url, data, {
-      headers: {
-        Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
+    const response = await axios.post(
+      url,
+      {
+        inputs: associations.map((item) => ({
+          from: { id: item.contactId },
+          to: { id: item.companyId },
+          type: "contact_to_company"
+        }))
       },
-    });
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-    console.log("Companies created:", response.data);
     return response.data;
+
   } catch (error) {
     console.error(
-      "Error creating companies:",
-      error.response?.data || error.message,
+      "Error creating associations:",
+      error.response?.data || error.message
     );
+    return null;
   }
 }
 
@@ -384,5 +385,5 @@ export {
   associateContactToCompany,
   upsertHubSpotObject,
   syncEmailWithLogging,
-  createBulkCompanies,
+  createContactCompanyAssociations
 };

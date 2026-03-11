@@ -15,7 +15,7 @@ import {
   upsertHubSpotObject,
   syncEmailWithLogging,
 } from "../services/hubspot.service.js";
-import { createBulkCompanies } from "../services/hubspot.service.js";
+import { createContactCompanyAssociations } from "../services/hubspot.service.js";
 
 import {
   companyPayload,
@@ -96,7 +96,7 @@ async function processContacts(companies, hubspotCompanyId) {
     logger.info(`Fetched ${contacts.length} contacts`);
 
 
-    let allContactsId = [];
+    let associationArr = [];
 
     for (const contact of contacts) {
       try {
@@ -115,22 +115,29 @@ async function processContacts(companies, hubspotCompanyId) {
           payload,
         );
 
-        allContactsId.push(hubspotContactId );
+        // allContactsId.push(hubspotContactId );
+        if (hubspotContactId && hubspotCompanyId) {
+          associationArr.push({
+            contactId: hubspotContactId,
+            companyId: hubspotCompanyId
+          });
+        }
+
 
        
         
         // Assocation logic Company and Contact
-        if (hubspotCompanyId && hubspotContactId) {
-          // let associationResult = null;
+        // if (hubspotCompanyId && hubspotContactId) {
+        //   let associationResult = null;
 
-          // associationResult = await associateContactToCompany(
-          //   hubspotCompanyId,
-          //   hubspotContactId,
-          // );
+        //   associationResult = await associateContactToCompany(
+        //     hubspotCompanyId,
+        //     hubspotContactId,
+        //   );
 
-          logger.info(
-            `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
-          );
+        //   logger.info(
+        //     `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
+        //   );
 
           // // ✅ SUCCESS: Move the call INSIDE this block.
           const emailWithLogging = await syncEmailWithLogging({
@@ -142,11 +149,11 @@ async function processContacts(companies, hubspotCompanyId) {
           logger.info(
             `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`,
           );
-        } else {
-          logger.warn(
-            `Company ${contact.companyId} not found in HubSpot Skipping association.`,
-          );
-        }
+        // } else {
+        //   logger.warn(
+        //     `Company ${contact.companyId} not found in HubSpot Skipping association.`,
+        //   );
+        // }
       } catch (error) {
         logger.error(
           `Error processing contact ${contact.id}: ${error.message}`,
@@ -154,14 +161,16 @@ async function processContacts(companies, hubspotCompanyId) {
       }
     }
 
-    // loop through all contacts Id
-
-     let associationResult = null;
-
-          associationResult = await associateContactToCompany(
-            hubspotCompanyId,
-            hubspotContactId,
-          );
+      // 🔹 Bulk association after loop
+    if (associationArr.length > 0) {
+      const result = await createContactCompanyAssociations(associationArr);
+      
+      logger.info(
+        `Bulk association completed: ${JSON.stringify(result, null, 2)}`
+      );
+    } else {
+      logger.warn("No associations to create.");
+    }
     
   } catch (error) {
     logger.error("Error fetching contacts:", error.message);
