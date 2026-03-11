@@ -152,32 +152,30 @@ function extractValidEmail(email) {
 }
 
 // contact payload mapping
-function mapContactsToHubspot(c,item) {
+function mapContactsToHubspot(c, item) {
   // Check if contact exists
   if (!c) return null;
 
-  // const fullName = typeof c.name === "string" ? c.name.trim() : "";
-  // const nameParts = fullName.split(" ");
+  const nameParts = (c?.name || "").trim().split(" ");
 
   return {
     properties: {
       orderwiseid: c?.id || null,
-       firstname: c?.name || null,
-      lastname: c?.name ||null,
-       phone: c?.telephone || null,
+
+      firstname: nameParts[0] || null,
+      lastname: nameParts.slice(1).join(" ") || null,
+      //  firstname: c?.name || null,
+      // lastname: c?.name ||null,
+      phone: c?.telephone || null,
       email: extractValidEmail(c?.email),
-      // compnayOrderwiseId: company.properties.orderwiseid,
+      company: c?.companyId || null,
+      mobilephone: c?.mobile || null,
+      fax: c?.fax || null,
 
       // company: item?.id || null,
-
-    
+      // compnayOrderwiseId: company.properties.orderwiseid,
     },
   };
-
 }
-
-
-
-
 
 export { cleanProps, companyPayload, mapContactsToHubspot, extractValidEmail };

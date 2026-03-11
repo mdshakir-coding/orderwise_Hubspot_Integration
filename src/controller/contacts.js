@@ -95,13 +95,17 @@ async function processContacts(companies, hubspotCompanyId) {
     const contacts = await getContacts(companies);
     logger.info(`Fetched ${contacts.length} contacts`);
 
+
+    let allContactsId = [];
+
     for (const contact of contacts) {
       try {
+        logger.info(`Processing contact ${JSON.stringify(contact, null, 2)}`);
         // Contact Payload Mapping
         const payload = mapContactsToHubspot(contact, companies);
         logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
-        const orderwiseId = String(payload?.properties?.orderwiseid) || null; 
+        const orderwiseId = String(payload?.properties?.orderwiseid) || null;
         // --- USE THE NEW UPSERT FUNCTION ---
         let hubspotContactId = null;
         hubspotContactId = await upsertHubSpotObject(
@@ -111,45 +115,29 @@ async function processContacts(companies, hubspotCompanyId) {
           payload,
         );
 
-        // 3. Association Logic
-        // if (hubspotContactId && contact.companyId) {
-        //   const hubspotCompanyId = await searchObjectByKey(
-        //     "companies",
-        //     "orderwiseid",
-        //     String(contact.companyId),
-        //   );
+        allContactsId.push(hubspotContactId );
 
-        // if (hubspotCompanyId) {
-        //   await associateContactToCompany(hubspotCompanyId, hubspotContactId);
-        //   logger.info(
-        //     `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
-        //   );
-        // } else {
-        //   logger.warn(
-        //     `Company ${contact.companyId} not found in HubSpot. Skipping association.`,
-        //   );
-        // }
-        // }
+       
+        
         // Assocation logic Company and Contact
         if (hubspotCompanyId && hubspotContactId) {
-          let associationResult = null;
+          // let associationResult = null;
 
-          associationResult = await associateContactToCompany(
-            hubspotCompanyId,
-            hubspotContactId,
-          );
+          // associationResult = await associateContactToCompany(
+          //   hubspotCompanyId,
+          //   hubspotContactId,
+          // );
 
           logger.info(
             `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
           );
 
-          // ✅ SUCCESS: Move the call INSIDE this block.
+          // // ✅ SUCCESS: Move the call INSIDE this block.
           const emailWithLogging = await syncEmailWithLogging({
-            subject: `OrderWise Activity - Contact: ${String(orderwiseId) || null}`,
+            subject: `OrderWise Activity - Contact: ${orderwiseId}`,
             body: `Synced activity for ${contact.firstName || ""} ${contact.lastName || ""}. Email: ${contact.email || "N/A"}`,
             contactId: hubspotContactId,
             companyId: hubspotCompanyId,
-            orderwiseId: orderwiseId,
           });
           logger.info(
             `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`,
@@ -165,6 +153,16 @@ async function processContacts(companies, hubspotCompanyId) {
         );
       }
     }
+
+    // loop through all contacts Id
+
+     let associationResult = null;
+
+          associationResult = await associateContactToCompany(
+            hubspotCompanyId,
+            hubspotContactId,
+          );
+    
   } catch (error) {
     logger.error("Error fetching contacts:", error.message);
   }
