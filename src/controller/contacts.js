@@ -54,7 +54,6 @@ async function syncContacts(companies) {
         logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
         companyId = searchResult.id;
 
-        
         // update company in hubspot
         if (searchResult) {
           const updatedCompany = await updateObject(
@@ -66,20 +65,17 @@ async function syncContacts(companies) {
             `Updated Company:\n${JSON.stringify(updatedCompany, null, 2)}`,
           );
           companyId = updatedCompany.id;
-
+        } else {
           // create company in hubspot
-
           const createdCompany = await createObject("companies", payload);
+
           logger.info(
             `Created Company:\n${JSON.stringify(createdCompany, null, 2)}`,
           );
-           
-
+          companyId = createdCompany.id;
         }
         let upsertContact = null;
         upsertContact = await processContacts(companies, companyId);
-        logger.info(`Upsert Contact Result: ${upsertContact}`);
-        // return; // todo: remove this return after testing
       } catch (error) {
         logger.error(
           `Error processing company ${company.id}: ${error.message}`,
@@ -102,10 +98,10 @@ async function processContacts(companies, hubspotCompanyId) {
     for (const contact of contacts) {
       try {
         // Contact Payload Mapping
-        const payload = mapContactsToHubspot(contact, companies[0]);
-        const orderwiseId = String(contact.id);
+        const payload = mapContactsToHubspot(contact, companies);
         logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
+        const orderwiseId = String(payload?.properties?.orderwiseid) || null; 
         // --- USE THE NEW UPSERT FUNCTION ---
         let hubspotContactId = null;
         hubspotContactId = await upsertHubSpotObject(
@@ -149,11 +145,11 @@ async function processContacts(companies, hubspotCompanyId) {
 
           // ✅ SUCCESS: Move the call INSIDE this block.
           const emailWithLogging = await syncEmailWithLogging({
-            subject: `OrderWise Activity - Contact: ${contact.id}`,
+            subject: `OrderWise Activity - Contact: ${String(orderwiseId) || null}`,
             body: `Synced activity for ${contact.firstName || ""} ${contact.lastName || ""}. Email: ${contact.email || "N/A"}`,
             contactId: hubspotContactId,
             companyId: hubspotCompanyId,
-            orderWiseId: String(contact.id),
+            orderwiseId: orderwiseId,
           });
           logger.info(
             `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`,

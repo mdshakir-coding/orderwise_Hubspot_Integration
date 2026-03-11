@@ -35,7 +35,9 @@ let contacts = [];
 // fetch companies
 
 async function getCompanies(retry = true) {
-  await login();
+
+  // orderwised login 
+     await login();
   // logger.info("Orderwise login successful");
   try {
     if (!token && retry) await login();
@@ -95,12 +97,6 @@ async function getCompanies(retry = true) {
     return [];
   }
 }
-
-//
-
-
-
-
 
 // fetch contacts 
     logger.info(`Contacts Count: ${contacts.length}`);
