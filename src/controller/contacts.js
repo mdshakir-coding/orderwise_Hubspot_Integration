@@ -22,6 +22,7 @@ import {
   mapContactsToHubspot,
   extractValidEmail,
   isCompanySame,
+  isRecordUpToDate,
 } from "../utils/helper.js";
 
 /**
@@ -100,55 +101,13 @@ async function upsertCompany(company) {
 
 async function syncContacts(companies) {
   try {
-    // await login();
-    // logger.info("Orderwise login successful");
-
-    // 1. Fetch companies
-    // const companies = await getCompanies();
-    // logger.info(`Fetched ${companies.length} companies`);
-    // // logger.info(`Companies:\n${JSON.stringify(companies[999], null, 2)}`);
-    // return;
-
     for (const company of companies) {
       try {
         // upsert comany in hubspot
-
         const upsertCompanyId = await upsertCompany(company);
 
-        return upsertCompanyId;
-
-        // search company in
-
-        // const searchResult = await searchObjectByKey(
-        //   "companies", // object
-        //   "orderwiseid", // property
-        //   company.id // value
-        // );
-        // logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
-        // companyId = searchResult.id;
-
-        // // update company in hubspot
-        // if (searchResult) {
-        //   const updatedCompany = await updateObject(
-        //     "companies",
-        //     searchResult, // <-- already the ID string
-        //     payload // <-- you need to send payload
-        //   );
-        //   logger.info(
-        //     `Updated Company:\n${JSON.stringify(updatedCompany, null, 2)}`
-        //   );
-        //   companyId = updatedCompany.id;
-        // } else {
-        //   // create company in hubspot
-        //   const createdCompany = await createObject("companies", payload);
-
-        //   logger.info(
-        //     `Created Company:\n${JSON.stringify(createdCompany, null, 2)}`
-        //   );
-        //   companyId = createdCompany.id;
-        // }
-        let upsertContact = null;
-        upsertContact = await processContacts(company, upsertCompanyId);
+        const upsertContact = await processContacts(company, upsertCompanyId);
+        return;
       } catch (error) {
         logger.error(
           `Error processing company ${company.id}: ${error.message}`
@@ -162,6 +121,177 @@ async function syncContacts(companies) {
   }
 }
 
+// async function upsertContact(objectType, searchKey, searchValue, payload) {
+//   try {
+//     const contactProperties = [
+//       "orderwiseid",
+//       "name",
+//       "phone",
+//       "mobilephone",
+//       "fax",
+//       "email",
+//       "address",
+//       "address2",
+//       "city",
+//       "zip",
+//       "state",
+//       "country",
+//       "company",
+//     ];
+//     // 1. Primary Search: Search by Orderwise ID
+//     let hubspotId = null;
+//     let searchResult = await searchObjectByKey(
+//       objectType,
+//       searchKey,
+//       searchValue,
+//       contactProperties
+//     );
+//     hubspotId = searchResult?.id;
+//     // 2. Secondary Search: If ID search fails, search by Email (only for contacts)
+//     if (!hubspotId && objectType === "contacts" && payload?.properties?.email) {
+//       logger.info(
+//         `ID search failed for ${searchValue}, searching by email: ${payload?.properties?.email}`
+//       );
+//       searchResult = await searchObjectByKey(
+//         objectType,
+//         "email",
+//         payload?.properties?.email,
+//         contactProperties
+//       );
+//       hubspotId = searchResult?.id;
+//     }
+
+//     logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
+
+//     // 3️⃣ Update if exists
+//     if (hubspotId) {
+//       logger.info(`Updating existing ${objectType}: ${hubspotId}`);
+
+//       const updatedObject = await updateObject(objectType, hubspotId, payload);
+//       logger.info(
+//         `Updated ${objectType} successfully: ${JSON.stringify(
+//           updatedObject,
+//           null,
+//           2
+//         )}`
+//       );
+
+//       return updatedObject?.id || hubspotId;
+//     }
+
+//     // 4️⃣ Create if not found
+//     try {
+//       const createdObject = await createObject(objectType, payload);
+//       return createdObject?.id || null;
+//     } catch (createError) {
+//       if (createError.response && createError.response.status === 409) {
+//         logger.warn(
+//           `409 Conflict: Record exists but hidden from search (${searchValue})`
+//         );
+//         return null;
+//       }
+
+//       throw createError;
+//     }
+//   } catch (error) {
+//     logger.error("Error upserting contact:", error);
+//   }
+// }
+
+/**
+ * 
+ * @param {orderwiseid: c?.id || null,
+
+      firstname: nameParts[0] || null,
+      lastname: nameParts.slice(1).join(" ") || null,
+      //  firstname: c?.name || null,
+      // lastname: c?.name ||null,
+      phone: c?.telephone || null,
+      email: extractValidEmail(c?.email),
+      company: c?.companyId || null,
+      mobilephone: c?.mobile || null,
+      fax: c?.fa} objectType 
+ * @param {*} searchKey 
+ * @param {*} searchValue 
+ * @param {*} payload 
+ * @returns 
+ */
+
+async function upsertContact(objectType, searchKey, searchValue, payload) {
+  try {
+    const contactProperties = [
+      "orderwiseid",
+      "firstname",
+      "lastname",
+      "phone",
+      "mobilephone",
+      "fax",
+      "email",
+      // "company",
+    ];
+
+    // 1. Search for existing record
+    let searchResult = await searchObjectByKey(
+      objectType,
+      searchKey,
+      searchValue,
+      contactProperties
+    );
+
+    // 2. Fallback search (Email)
+    if (
+      !searchResult?.id &&
+      objectType === "contacts" &&
+      payload?.properties?.email
+    ) {
+      logger.info(
+        `ID search failed for ${searchValue}, searching by email: ${payload.properties.email}`
+      );
+      searchResult = await searchObjectByKey(
+        objectType,
+        "email",
+        payload.properties.email,
+        contactProperties
+      );
+    }
+
+    logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
+
+    const hubspotId = searchResult?.id;
+
+    // 3. Idempotency Check
+    if (hubspotId && isRecordUpToDate(payload, searchResult)) {
+      logger.info(
+        `Idempotency Match: ${objectType} ${hubspotId} is already up-to-date. Skipping.`
+      );
+      return hubspotId;
+    }
+
+    // 4. Update if exists
+    if (hubspotId) {
+      logger.info(`Updating existing ${objectType}: ${hubspotId}`);
+      const updatedObject = await updateObject(objectType, hubspotId, payload);
+      return updatedObject?.id || hubspotId;
+    }
+
+    // 5. Create if not found
+    try {
+      const createdObject = await createObject(objectType, payload);
+      return createdObject?.id || null;
+    } catch (createError) {
+      if (createError.response?.status === 409) {
+        logger.warn(
+          `409 Conflict: Record exists but hidden from search (${searchValue})`
+        );
+        return null;
+      }
+      throw createError;
+    }
+  } catch (error) {
+    logger.error(`Error upserting ${objectType}:`, error);
+  }
+}
+
 async function processContacts(company, hubspotCompanyId) {
   try {
     // 2. Fetch contacts
@@ -172,15 +302,17 @@ async function processContacts(company, hubspotCompanyId) {
 
     for (const contact of contacts) {
       try {
-        logger.info(`Processing contact ${JSON.stringify(contact, null, 2)}`);
+        logger.info(
+          `Processing orderwise contact ${JSON.stringify(contact, null, 2)}`
+        );
         // Contact Payload Mapping
-        const payload = mapContactsToHubspot(contact, companies);
+        const payload = mapContactsToHubspot(contact, company);
         logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
         const orderwiseId = String(payload?.properties?.orderwiseid) || null;
         // --- USE THE NEW UPSERT FUNCTION ---
         let hubspotContactId = null;
-        hubspotContactId = await upsertHubSpotObject(
+        hubspotContactId = await upsertContact(
           "contacts",
           "orderwiseid",
           orderwiseId,

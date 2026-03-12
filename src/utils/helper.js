@@ -200,7 +200,34 @@ function isCompanySame(hubspot, payload) {
     return String(hsVal).trim() === String(newVal).trim();
   });
 }
+
+/**
+ * Compares payload properties against existing record properties.
+ * Returns true if they are identical (idempotent).
+ */
+function isRecordUpToDate(payload, searchResult) {
+  if (!searchResult || !payload?.properties) return false;
+
+  const incoming = payload.properties;
+  const existing = searchResult.properties || {};
+
+  // Compare only the keys provided in the incoming payload
+  return Object.keys(incoming).every((key) => {
+    const incomingVal = incoming[key]?.toString().trim() || null;
+    const existingVal = existing[key]?.toString().trim() || null;
+
+    const isMatch = incomingVal === existingVal;
+
+    // Optional: useful for debugging why idempotency failed
+    if (!isMatch) {
+      // logger.debug(`Diff found in ${key}: Payload(${incomingVal}) vs CRM(${existingVal})`);
+    }
+
+    return isMatch;
+  });
+}
 export {
+  isRecordUpToDate,
   cleanProps,
   companyPayload,
   mapContactsToHubspot,

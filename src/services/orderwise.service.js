@@ -38,7 +38,7 @@ async function getCompanies(retry = true) {
   try {
     await login();
 
-    let allCustomers = [];
+    // let allCustomers = [];
     let lastId = 0;
     // let lastId = getLastId() || 0;
 
@@ -67,14 +67,12 @@ async function getCompanies(retry = true) {
 
       if (!data || data.length === 0) break;
 
-      allCustomers.push(...data);
-      // return allCustomers; //todo remove after testing
+      // allCustomers.push(...data);
 
       try {
         await syncContacts(data);
-        return; //todo remove after testing
       } catch (error) {
-        logger.error("Error syncing contacts:", error.message);
+        logger.error("Error syncing contacts:", error);
       }
 
       // Process the records here (e.g., save to DB) before updating lastId
@@ -88,69 +86,68 @@ async function getCompanies(retry = true) {
       // logger.info(`Fetched batch. Total: ${JSON.stringify(data[data.length - 1], null, 2)}`);
     }
 
-    return allCustomers || [];
+    // return allCustomers || [];
   } catch (error) {
-    logger.error("Error fetching Orderwise customers:", error.message);
+    logger.error("Error fetching Orderwise customers:", error);
     return [];
   }
 }
 
 // fetch contacts
 logger.info(`Contacts Count: ${contacts.length}`);
-async function getContacts(companies) {
+async function getContacts(companyId) {
   try {
     if (!token) await login();
-    if (!companies || companies.length === 0) return [];
+    // if (!companies || companies.length === 0) return [];
 
     let allContacts = [];
 
-    for (const company of companies) {
-      // 1. lastId must be reset to 0 for every NEW company
-      let lastId = 0;
-      let hasMore = true;
+    // for (const company of companies) {
+    // 1. lastId must be reset to 0 for every NEW company
+    let lastId = 0;
+    let hasMore = true;
 
-      while (hasMore) {
-        // 2. Add last_id to the URL query parameters
-        const url = `http://sslvpn.caretrade.co/OWAPI/customers/${company.id}/customer-contacts?limit=1000&last_id=${lastId}`;
+    while (hasMore) {
+      // 2. Add last_id to the URL query parameters
+      const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?limit=1000&last_id=${lastId}`;
 
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if (!response.ok) {
-          logger.warn(`Failed contacts for company ${company.id}`);
-          break; // Move to next company
-        }
-
-        const data = await response.json();
-
-        if (!data || data.length === 0) break;
-
-        allContacts.push(
-          ...data.map((contact) => ({
-            ...contact,
-            companyId: company.id,
-          }))
-        );
-        return allContacts; //todo remove after testing
-        // 3. Update lastId to the ID of the last contact in the current batch
-        lastId = data[data.length - 1].id;
-
-        logger.info(
-          `Fetched batch of ${data.length} for company ${company.id}`
-        );
-
-        // 4. If we got fewer than 1000, no more pages exist
-        if (data.length < 1000) hasMore = false;
+      if (!response.ok) {
+        logger.warn(`Failed contacts for company ${companyId}`);
+        break; // Move to next company
       }
+
+      const data = await response.json();
+
+      if (!data || data.length === 0) break;
+
+      allContacts.push(...data);
+      // allContacts.push(
+      //   ...data.map((contact) => ({
+      //     ...contact,
+      //     companyId,
+      //   }))
+      // );
+      // return allContacts; //todo remove after testing
+      // 3. Update lastId to the ID of the last contact in the current batch
+      lastId = data[data.length - 1].id;
+
+      logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
+
+      // 4. If we got fewer than 1000, no more pages exist
+      if (data.length < 1000) hasMore = false;
     }
+    // }
     return allContacts;
   } catch (error) {
-    logger.error("Error fetching contacts:", error.message);
+    logger.error("Error fetching contacts:", error);
     return [];
   }
 }
