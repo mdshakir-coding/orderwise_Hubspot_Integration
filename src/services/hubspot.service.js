@@ -24,10 +24,10 @@ import logger from "../config/logger.js";
 //   return data.results.length > 0 ? data.results[0].id : null;
 // }
 
-async function searchObjectByKey(object, key, value) {
+async function searchObjectByKey(object, key, value, properties) {
   if (!object || !key || !value) {
     logger.error(
-      `Missing search parameters → object:${object}, key:${key}, value:${value}`,
+      `Missing search parameters → object:${object}, key:${key}, value:${value}`
     );
     return null;
   }
@@ -53,6 +53,7 @@ async function searchObjectByKey(object, key, value) {
             ],
           },
         ],
+        properties,
       }),
     });
 
@@ -63,7 +64,7 @@ async function searchObjectByKey(object, key, value) {
     }
 
     const data = await response.json();
-    return data.results?.length > 0 ? data.results[0].id : null;
+    return data.results?.length > 0 ? data.results[0] : null;
   } catch (error) {
     logger.error("Error in searchObjectByKey:", error.message);
     return null;
@@ -122,7 +123,7 @@ async function createObject(object, payload) {
     if (!response.ok) {
       const errorText = await response.text();
       logger.error(
-        `Failed to create ${object}: ${response.status} - ${errorText}`,
+        `Failed to create ${object}: ${response.status} - ${errorText}`
       );
       return null; // Return null on failure
     }
@@ -147,7 +148,7 @@ async function updateObject(object, id, payload) {
           Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
         },
         body: JSON.stringify(payload),
-      },
+      }
     );
 
     // if (!response.ok) {
@@ -221,19 +222,27 @@ async function associateContactToCompany(companyId, contactId) {
 // }
 
 // new upsert function with improved error handling and logging
-async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) {
+async function upsertHubSpotObject(
+  objectType,
+  searchKey,
+  searchValue,
+  payload
+) {
   try {
     // 1. Primary Search: Search by Orderwise ID
     let hubspotId = await searchObjectByKey(objectType, searchKey, searchValue);
-   
-    
 
     // 2. Secondary Search: If ID search fails, search by Email (only for contacts)
     if (!hubspotId && objectType === "contacts" && payload?.properties?.email) {
-      logger.info(`ID search failed for ${searchValue}, searching by email: ${payload?.properties?.email}`);
-      hubspotId = await searchObjectByKey(objectType, "email", payload?.properties?.email);
+      logger.info(
+        `ID search failed for ${searchValue}, searching by email: ${payload?.properties?.email}`
+      );
+      hubspotId = await searchObjectByKey(
+        objectType,
+        "email",
+        payload?.properties?.email
+      );
     }
-   
 
     // 3️⃣ Update if exists
     if (hubspotId) {
@@ -241,7 +250,11 @@ async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) 
 
       const updatedObject = await updateObject(objectType, hubspotId, payload);
       logger.info(
-        `Updated ${objectType} successfully: ${JSON.stringify(updatedObject, null, 2)}`,
+        `Updated ${objectType} successfully: ${JSON.stringify(
+          updatedObject,
+          null,
+          2
+        )}`
       );
 
       return updatedObject?.id || hubspotId;
@@ -254,7 +267,7 @@ async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) 
     } catch (createError) {
       if (createError.response && createError.response.status === 409) {
         logger.warn(
-          `409 Conflict: Record exists but hidden from search (${searchValue})`,
+          `409 Conflict: Record exists but hidden from search (${searchValue})`
         );
         return null;
       }
@@ -263,7 +276,7 @@ async function upsertHubSpotObject(objectType, searchKey, searchValue, payload) 
     }
   } catch (error) {
     logger.error(
-      `Error upserting ${objectType} ${searchValue}: ${error.message}`,
+      `Error upserting ${objectType} ${searchValue}: ${error.message}`
     );
     return null;
   }
@@ -328,13 +341,13 @@ async function syncEmailWithLogging({
     if (response.ok) {
       // Success Log
       logger.info(
-        `${timestamp} | info | Email Activity created: ${result.id} associated with Contact ${contactId} and Company ${companyId}`,
+        `${timestamp} | info | Email Activity created: ${result.id} associated with Contact ${contactId} and Company ${companyId}`
       );
       return result;
     } else {
       // Error Log
       logger.error(
-        `${timestamp} | error | HubSpot Sync Failed for OrderWise ID ${orderWiseId}: ${result.message}`,
+        `${timestamp} | error | HubSpot Sync Failed for OrderWise ID ${orderWiseId}: ${result.message}`
       );
     }
   } catch (error) {
@@ -346,8 +359,9 @@ async function syncEmailWithLogging({
 
 import axios from "axios";
 
- async function createContactCompanyAssociations(associations) {
-  const url = "https://api.hubapi.com/crm/v4/associations/contacts/companies/batch/create";
+async function createContactCompanyAssociations(associations) {
+  const url =
+    "https://api.hubapi.com/crm/v4/associations/contacts/companies/batch/create";
 
   try {
     const response = await axios.post(
@@ -356,19 +370,18 @@ import axios from "axios";
         inputs: associations.map((item) => ({
           from: { id: item.contactId },
           to: { id: item.companyId },
-          type: "contact_to_company"
-        }))
+          type: "contact_to_company",
+        })),
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
 
     return response.data;
-
   } catch (error) {
     console.error(
       "Error creating associations:",
@@ -385,5 +398,5 @@ export {
   associateContactToCompany,
   upsertHubSpotObject,
   syncEmailWithLogging,
-  createContactCompanyAssociations
+  createContactCompanyAssociations,
 };

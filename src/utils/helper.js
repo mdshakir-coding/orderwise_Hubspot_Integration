@@ -178,4 +178,32 @@ function mapContactsToHubspot(c, item) {
   };
 }
 
-export { cleanProps, companyPayload, mapContactsToHubspot, extractValidEmail };
+function isCompanySame(hubspot, payload) {
+  const hs = hubspot.properties;
+  const incoming = payload.properties;
+
+  const fields = [
+    "orderwiseid",
+    "domain",
+    "phone",
+    "address",
+    "address2",
+    "city",
+    "zip",
+    "state",
+    "country",
+  ];
+
+  return fields.every((field) => {
+    const hsVal = hs[field] || "";
+    const newVal = incoming[field] || "";
+    return String(hsVal).trim() === String(newVal).trim();
+  });
+}
+export {
+  cleanProps,
+  companyPayload,
+  mapContactsToHubspot,
+  extractValidEmail,
+  isCompanySame,
+};
