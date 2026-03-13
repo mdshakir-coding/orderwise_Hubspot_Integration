@@ -38,7 +38,7 @@ async function getCompanies(retry = true) {
   try {
     await login();
 
-    // let allCustomers = [];
+    let allCustomers = [];
     let lastId = 0;
     // let lastId = getLastId() || 0;
 
@@ -94,7 +94,7 @@ async function getCompanies(retry = true) {
 }
 
 // fetch contacts
-logger.info(`Contacts Count: ${contacts.length}`);
+// logger.info(`Contacts Count: ${contacts.length}`);
 async function getContacts(companyId) {
   try {
     if (!token) await login();
@@ -207,6 +207,27 @@ async function postContactsToHubspot(
     }
   }
 }
+// fetch activities
+ async function fetchOrderwiseActivities(company,activityPayload) {
+  try {
+    const url = `http://sslvpn.caretrade.co/OWAPI/crm/${company.id}/activities`;
+
+    const response = await axios.get(url, {
+      params: {
+        include_completed: true,
+        include_analysis: true,
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching OrderWise activities:", error.response?.data || error.message);
+    throw error;
+  }
+}
 
 export {
   login,
@@ -214,4 +235,5 @@ export {
   getContacts,
   postCompaniesToHubspot,
   postContactsToHubspot,
+  fetchOrderwiseActivities,
 };

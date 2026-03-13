@@ -226,6 +226,27 @@ function isRecordUpToDate(payload, searchResult) {
     return isMatch;
   });
 }
+
+
+// Activities Mapping here
+
+function mapActivitiesToHubspot(activity) {
+  const mappedActivity = {
+    payload: {
+      hs_activity_type: "CALL",
+      hs_timestamp: activity.startDateTime,
+      hs_call_title: activity.name,
+      hs_call_body: activity.details,
+      hs_call_status: activity.status === 2 ? "COMPLETED" : "IN_PROGRESS",
+      orderwise_activity_id: activity.id
+    }
+  };
+
+  return mappedActivity;
+}
+
+
+
 export {
   isRecordUpToDate,
   cleanProps,
@@ -233,4 +254,5 @@ export {
   mapContactsToHubspot,
   extractValidEmail,
   isCompanySame,
+  mapActivitiesToHubspot,
 };

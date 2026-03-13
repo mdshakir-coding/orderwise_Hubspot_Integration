@@ -286,74 +286,77 @@ async function upsertHubSpotObject(
 /**
  * Syncs OrderWise CRM activity to HubSpot with clear log output.
  */
-async function syncEmailWithLogging({
-  subject,
-  body,
-  contactId,
-  companyId,
-  orderWiseId,
-}) {
-  // const HUBSPOT_ACCES_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN;
-  const url = "https://api.hubapi.com/crm/v3/objects/emails";
+// async function syncEmailWithLogging({
+//   subject,
+//   body,
+//   contactId,
+//   companyId,
+//   orderWiseId,
+// }) {
+//   const url = "https://api.hubapi.com/crm/v3/objects/emails";
 
-  // Generate timestamp for the log
-  const timestamp = new Date()
-    .toLocaleString("en-US", { hour12: true })
-    .replace(",", "");
+//   // Generate timestamp for the log
+//   const timestamp = new Date()
+//     .toLocaleString("en-US", { hour12: true })
+//     .replace(",", "");
 
-  const payload = {
-    properties: {
-      hs_timestamp: new Date().toISOString(),
-      hs_email_subject: subject,
-      hs_email_direction: "EMAIL",
-      hs_email_status: "SENT",
-      hs_email_text: body,
-      // "orderwise_id": orderWiseId // Optional: helps tracking
-    },
-    associations: [
-      {
-        to: { id: contactId },
-        types: [
-          { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
-        ],
-      },
-      {
-        to: { id: companyId },
-        types: [
-          { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
-        ],
-      },
-    ],
-  };
+//   const payload = {
+//     properties: {
+//       hs_timestamp: new Date().toISOString(),
+//       hs_email_subject: subject,
+//       hs_email_direction: "EMAIL",
+//       hs_email_status: "SENT",
+//       hs_email_text: body,
+//       // "orderwise_id": orderWiseId // Optional: helps tracking
+//     },
+//     associations: [
+//       {
+//         to: { id: contactId },
+//         types: [
+//           { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+//         ],
+//       },
+//       {
+//         to: { id: companyId },
+//         types: [
+//           { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
+//         ],
+//       },
+//     ],
+//   };
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+//   try {
+//     const response = await fetch(url, {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(payload),
+//     });
 
-    const result = await response.json();
+//     const result = await response.json();
 
-    if (response.ok) {
-      // Success Log
-      logger.info(
-        `${timestamp} | info | Email Activity created: ${result.id} associated with Contact ${contactId} and Company ${companyId}`
-      );
-      return result;
-    } else {
-      // Error Log
-      logger.error(
-        `${timestamp} | error | HubSpot Sync Failed for OrderWise ID ${orderWiseId}: ${result.message}`
-      );
-    }
-  } catch (error) {
-    logger.error(`${timestamp} | error | System Exception: ${error.message}`);
-  }
-}
+//     if (response.ok) {
+//       // Success Log
+//       logger.info(
+//         `${timestamp} | info | Email Activity created: ${result.id} associated with Contact ${contactId} and Company ${companyId}`
+//       );
+//       return result;
+//     } else {
+//       // Error Log
+//       logger.error(
+//         `${timestamp} | error | HubSpot Sync Failed for OrderWise ID ${orderWiseId}: ${result.message}`
+//       );
+//     }
+//   } catch (error) {
+//     logger.error(`${timestamp} | error | System Exception: ${error.message}`);
+//   }
+// }
+
+// import axios from "axios";
+
+
 
 // Bulk Company and contact Creation and Association Logic
 
@@ -397,6 +400,8 @@ export {
   updateObject,
   associateContactToCompany,
   upsertHubSpotObject,
-  syncEmailWithLogging,
+  // syncEmailWithLogging,
   createContactCompanyAssociations,
+
+  
 };

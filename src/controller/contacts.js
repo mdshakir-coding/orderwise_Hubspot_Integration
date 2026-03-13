@@ -13,9 +13,11 @@ import {
   updateObject,
   associateContactToCompany,
   upsertHubSpotObject,
-  syncEmailWithLogging,
+  // syncEmailWithLogging,
 } from "../services/hubspot.service.js";
 import { createContactCompanyAssociations } from "../services/hubspot.service.js";
+import{fetchOrderwiseActivities,} from "../services/orderwise.service.js";
+import {mapActivitiesToHubspot} from "../utils/helper.js";
 
 import {
   companyPayload,
@@ -87,13 +89,29 @@ async function upsertCompany(company) {
 
       return updatedCompany.id;
     }
-
+    
     // create new company
     const createdCompany = await createObject("companies", payload);
 
     logger.info(`Created Company: ${createdCompany.id}`);
 
-    return createdCompany.id;
+
+    //  return;  createdCompany.id;
+
+
+    // Build payload for Activity
+
+    const activityPayload = mapActivitiesToHubspot(company);
+    logger.info(`Mapped Activity Payload:\n${JSON.stringify(activityPayload, null, 2)}`);
+
+       // search Company id by email
+
+    const Activities = await fetchOrderwiseActivities(company.id,activityPayload);
+
+    logger.info(`Activities: ${JSON.stringify(Activities, null, 2)}`);
+    
+
+
   } catch (error) {
     logger.error("Error upserting company:", error.message);
   }
@@ -341,17 +359,17 @@ async function processContacts(company, hubspotCompanyId) {
         //   );
 
         // // ✅ SUCCESS: Move the call INSIDE this block.
-        const emailWithLogging = await syncEmailWithLogging({
-          subject: `OrderWise Activity - Contact: ${orderwiseId}`,
-          body: `Synced activity for ${contact.firstName || ""} ${
-            contact.lastName || ""
-          }. Email: ${contact.email || "N/A"}`,
-          contactId: hubspotContactId,
-          companyId: hubspotCompanyId,
-        });
-        logger.info(
-          `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`
-        );
+        // const emailWithLogging = await syncEmailWithLogging({
+        //   subject: `OrderWise Activity - Contact: ${payload.properties.orderwiseid}`,
+        //   body: `Synced activity for ${contact.firstName || ""} ${
+        //     contact.lastName || ""
+        //   }. Email: ${contact.email || "N/A"}`,
+        //   contactId: hubspotContactId,
+        //   companyId: hubspotCompanyId,
+        // });
+        // logger.info(
+        //   `Email sync result: ${JSON.stringify(emailWithLogging, null, 2)}`
+        // );
         // } else {
         //   logger.warn(
         //     `Company ${contact.companyId} not found in HubSpot Skipping association.`,
