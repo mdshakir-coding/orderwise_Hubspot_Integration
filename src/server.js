@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 32100;
 app.listen(PORT, () => {
   //    syncOrderwise();
   //   syncContacts();
-  // getCompanies();
+  getCompanies();
 
   logger.info(`Server running on port ${PORT}`);
 });

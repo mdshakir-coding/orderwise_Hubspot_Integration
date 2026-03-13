@@ -38,7 +38,7 @@ async function getCompanies(retry = true) {
   try {
     await login();
 
-    // let allCustomers = [];
+    let allCustomers = [];
     let lastId = 0;
     // let lastId = getLastId() || 0;
 
