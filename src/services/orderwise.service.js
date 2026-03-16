@@ -71,6 +71,7 @@ async function getCompanies(retry = true) {
 
       try {
         await syncContacts(data);
+        return; // TODO : remove after testing
       } catch (error) {
         logger.error("Error syncing contacts:", error);
       }
@@ -209,7 +210,7 @@ async function postContactsToHubspot(
 }
 // fetch activities
 import axios from "axios";
- async function fetchOrderwiseActivities(companyId) {
+async function fetchOrderwiseActivities(companyId) {
   try {
     const url = `http://sslvpn.caretrade.co/OWAPI/crm/${companyId}/activities`;
 
@@ -225,11 +226,13 @@ import axios from "axios";
 
     return response.data;
   } catch (error) {
-    console.error("Error fetching OrderWise activities:", error.response?.data || error.message);
+    console.error(
+      "Error fetching OrderWise activities:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 }
-
 
 // function activityAssociations({ contactId, companyId }) {
 //   const associations = [];

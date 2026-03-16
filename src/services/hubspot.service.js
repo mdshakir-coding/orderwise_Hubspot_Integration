@@ -347,8 +347,6 @@ async function upsertHubSpotObject(
 
 // import axios from "axios";
 
-
-
 // Bulk Company and contact Creation and Association Logic
 
 import axios from "axios";
@@ -385,10 +383,6 @@ async function createContactCompanyAssociations(associations) {
   }
 }
 
-
- 
-
-
 export {
   searchObjectByKey,
   createObject,
@@ -397,6 +391,4 @@ export {
   upsertHubSpotObject,
   // syncEmailWithLogging,
   createContactCompanyAssociations,
-
-  
 };
