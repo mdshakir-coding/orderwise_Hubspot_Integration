@@ -16,8 +16,9 @@ import {
   // syncEmailWithLogging,
 } from "../services/hubspot.service.js";
 import { createContactCompanyAssociations } from "../services/hubspot.service.js";
-import{fetchOrderwiseActivities,} from "../services/orderwise.service.js";
-import {mapActivitiesToHubspot} from "../utils/helper.js";
+import { fetchOrderwiseActivities } from "../services/orderwise.service.js";
+import { mapActivitiesToHubspot } from "../utils/helper.js";
+import { activityAssociations } from "../services/orderwise.service.js";
 
 import {
   companyPayload,
@@ -44,7 +45,7 @@ import {
 async function upsertCompany(company) {
   try {
     logger.info(
-      `Processing orderwise company ${JSON.stringify(company, null, 2)}`
+      `Processing orderwise company ${JSON.stringify(company, null, 2)}`,
     );
 
     const payload = companyPayload(company);
@@ -65,7 +66,7 @@ async function upsertCompany(company) {
       "companies",
       "orderwiseid",
       company.id,
-      properties
+      properties,
     );
 
     if (searchResult) {
@@ -84,34 +85,18 @@ async function upsertCompany(company) {
       const updatedCompany = await updateObject(
         "companies",
         companyId,
-        payload
+        payload,
       );
 
       return updatedCompany.id;
     }
-    
+
     // create new company
     const createdCompany = await createObject("companies", payload);
 
     logger.info(`Created Company: ${createdCompany.id}`);
 
-
-    //  return;  createdCompany.id;
-
-
-    // Build payload for Activity
-
-    const activityPayload = mapActivitiesToHubspot(company);
-    logger.info(`Mapped Activity Payload:\n${JSON.stringify(activityPayload, null, 2)}`);
-
-       // search Company id by email
-
-    const Activities = await fetchOrderwiseActivities(company.id,activityPayload);
-
-    logger.info(`Activities: ${JSON.stringify(Activities, null, 2)}`);
-    
-
-
+    return createdCompany.id;
   } catch (error) {
     logger.error("Error upserting company:", error.message);
   }
@@ -128,7 +113,7 @@ async function syncContacts(companies) {
         return;
       } catch (error) {
         logger.error(
-          `Error processing company ${company.id}: ${error.message}`
+          `Error processing company ${company.id}: ${error.message}`,
         );
       }
     }
@@ -138,6 +123,8 @@ async function syncContacts(companies) {
     logger.error("Orderwise sync failed:", error.message);
   }
 }
+
+// ✅ Fetch Orderwise activities
 
 // async function upsertContact(objectType, searchKey, searchValue, payload) {
 //   try {
@@ -253,7 +240,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
       objectType,
       searchKey,
       searchValue,
-      contactProperties
+      contactProperties,
     );
 
     // 2. Fallback search (Email)
@@ -263,13 +250,13 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
       payload?.properties?.email
     ) {
       logger.info(
-        `ID search failed for ${searchValue}, searching by email: ${payload.properties.email}`
+        `ID search failed for ${searchValue}, searching by email: ${payload.properties.email}`,
       );
       searchResult = await searchObjectByKey(
         objectType,
         "email",
         payload.properties.email,
-        contactProperties
+        contactProperties,
       );
     }
 
@@ -280,7 +267,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
     // 3. Idempotency Check
     if (hubspotId && isRecordUpToDate(payload, searchResult)) {
       logger.info(
-        `Idempotency Match: ${objectType} ${hubspotId} is already up-to-date. Skipping.`
+        `Idempotency Match: ${objectType} ${hubspotId} is already up-to-date. Skipping.`,
       );
       return hubspotId;
     }
@@ -299,7 +286,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
     } catch (createError) {
       if (createError.response?.status === 409) {
         logger.warn(
-          `409 Conflict: Record exists but hidden from search (${searchValue})`
+          `409 Conflict: Record exists but hidden from search (${searchValue})`,
         );
         return null;
       }
@@ -321,7 +308,7 @@ async function processContacts(company, hubspotCompanyId) {
     for (const contact of contacts) {
       try {
         logger.info(
-          `Processing orderwise contact ${JSON.stringify(contact, null, 2)}`
+          `Processing orderwise contact ${JSON.stringify(contact, null, 2)}`,
         );
         // Contact Payload Mapping
         const payload = mapContactsToHubspot(contact, company);
@@ -334,7 +321,7 @@ async function processContacts(company, hubspotCompanyId) {
           "contacts",
           "orderwiseid",
           orderwiseId,
-          payload
+          payload,
         );
 
         // allContactsId.push(hubspotContactId );
@@ -358,6 +345,60 @@ async function processContacts(company, hubspotCompanyId) {
         //     `Associated Contact ${hubspotContactId} with Company ${hubspotCompanyId}`,
         //   );
 
+        //  // ✅ Sync Orderwise activities for this company-contact pair
+
+        // Activity payload mapping
+
+        // const activities = await fetchOrderwiseActivities(company.id);
+        // logger.info(`Fetched: ${JSON.stringify(activities, null, 2)}`);
+
+        // const activityPayload = mapActivitiesToHubspot(company);
+
+        // logger.info(
+        //   `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`,
+        // );
+
+        // Activity payload mapping
+
+        // const activityPayload = mapActivitiesToHubspot(activities, hubspotContactId, hubspotCompanyId);
+        // logger.info(
+        //   `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`,
+        // );
+        const activities = await fetchOrderwiseActivities(company.id);
+        logger.info(`Fetched: ${JSON.stringify(activities, null, 2)}`);
+
+        for (const activity of activities) {
+          const activityPayload = mapActivitiesToHubspot(
+            activity,
+            hubspotContactId, // HubSpot Contact ID
+            hubspotCompanyId, // HubSpot Company ID
+          );
+
+          logger.info(
+            `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`,
+          );
+
+          const result = await createObject("calls", activityPayload);
+          logger.info(
+            `Created activity in HubSpot: ${JSON.stringify(result, null, 2)}`,
+          );
+        }
+
+        // Association logic for Activity
+        const associationEmail = activityAssociations(
+          hubspotContactId,
+          hubspotCompanyId,
+        );
+
+        logger.info(
+          `Association result for activity: ${JSON.stringify(
+            associationEmail,
+            null,
+            2,
+          )}`,
+        );
+        
+
         // // ✅ SUCCESS: Move the call INSIDE this block.
         // const emailWithLogging = await syncEmailWithLogging({
         //   subject: `OrderWise Activity - Contact: ${payload.properties.orderwiseid}`,
@@ -377,7 +418,7 @@ async function processContacts(company, hubspotCompanyId) {
         // }
       } catch (error) {
         logger.error(
-          `Error processing contact ${contact.id}: ${error.message}`
+          `Error processing contact ${contact.id}: ${error.message}`,
         );
       }
     }
@@ -387,7 +428,7 @@ async function processContacts(company, hubspotCompanyId) {
       const result = await createContactCompanyAssociations(associationArr);
 
       logger.info(
-        `Bulk association completed: ${JSON.stringify(result, null, 2)}`
+        `Bulk association completed: ${JSON.stringify(result, null, 2)}`,
       );
     } else {
       logger.warn("No associations to create.");

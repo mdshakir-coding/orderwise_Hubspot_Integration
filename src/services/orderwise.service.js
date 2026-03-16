@@ -208,9 +208,10 @@ async function postContactsToHubspot(
   }
 }
 // fetch activities
- async function fetchOrderwiseActivities(company,activityPayload) {
+import axios from "axios";
+ async function fetchOrderwiseActivities(companyId) {
   try {
-    const url = `http://sslvpn.caretrade.co/OWAPI/crm/${company.id}/activities`;
+    const url = `http://sslvpn.caretrade.co/OWAPI/crm/${companyId}/activities`;
 
     const response = await axios.get(url, {
       params: {
@@ -229,6 +230,69 @@ async function postContactsToHubspot(
   }
 }
 
+
+// function activityAssociations({ contactId, companyId }) {
+//   const associations = [];
+
+//   // Email → Contact
+//   if (contactId) {
+//     associations.push({
+//       to: { id: contactId },
+//       types: [
+//         {
+//           associationCategory: "HUBSPOT_DEFINED",
+//           associationTypeId: 198,
+//         },
+//       ],
+//     });
+//   }
+
+//   // Email → Company
+//   if (companyId) {
+//     associations.push({
+//       to: { id: companyId },
+//       types: [
+//         {
+//           associationCategory: "HUBSPOT_DEFINED",
+//           associationTypeId: 186,
+//         },
+//       ],
+//     });
+//   }
+
+//   return associations;
+// }
+
+function activityAssociations(contactId, companyId) {
+  const associations = [];
+
+  if (contactId) {
+    associations.push({
+      to: { id: contactId },
+      types: [
+        {
+          associationCategory: "HUBSPOT_DEFINED",
+          associationTypeId: 198,
+        },
+      ],
+    });
+  }
+
+  if (companyId) {
+    associations.push({
+      to: { id: companyId },
+      types: [
+        {
+          associationCategory: "HUBSPOT_DEFINED",
+          associationTypeId: 186,
+        },
+      ],
+    });
+  }
+
+  return associations;
+}
+
 export {
   login,
   getCompanies,
@@ -236,4 +300,5 @@ export {
   postCompaniesToHubspot,
   postContactsToHubspot,
   fetchOrderwiseActivities,
+  activityAssociations,
 };

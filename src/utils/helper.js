@@ -228,22 +228,142 @@ function isRecordUpToDate(payload, searchResult) {
 }
 
 
+
+[
+    {
+        "id": 8336,
+        "trackActivityId": 21,
+        "name": "Incoming Call",
+        "assignedToUserId": 61,
+        "type": 1,
+        "startDateTime": "2018-11-06T11:14:05.087",
+        "endDateTime": "2018-11-06T11:14:05.087",
+        "customerContact": 7268,
+        "details": "fault with RG2 not programming - sorted over the phone.",
+        "diaryActivity": false,
+        "status": 2,
+        "completedDateTime": "2018-11-06T11:14:43.937",
+        "completedByUserID": 61,
+        "rescheduledDateTime": null,
+        "rescheduledByUserId": null,
+        "rescheduledFromActivityId": null,
+        "inputDateTime": "2018-11-06T11:14:05.087",
+        "inputByUserId": 21,
+        "lastAmendedDateTime": "2018-11-06T11:15:02.187",
+        "lastAmendedByUserId": 21,
+        "analysis": {
+            "c_1": null,
+            "c_2": null,
+            "c_3": null,
+            "c_4": null,
+            "c_5": null,
+            "c_6": null,
+            "c_7": null,
+            "c_8": null,
+            "c_9": null,
+            "c_10": null,
+            "d_1": null,
+            "d_2": null,
+            "d_3": null,
+            "d_4": null,
+            "d_5": null,
+            "d_6": null,
+            "d_7": null,
+            "d_8": null,
+            "d_9": null,
+            "d_10": null,
+            "l_1": false,
+            "l_2": false,
+            "l_3": false,
+            "l_4": false,
+            "l_5": false,
+            "l_6": false,
+            "l_7": false,
+            "l_8": false,
+            "l_9": false,
+            "l_10": null,
+            "m_1": null,
+            "m_2": null,
+            "m_3": null,
+            "m_4": null,
+            "m_5": null,
+            "m_6": null,
+            "m_7": null,
+            "m_8": null,
+            "m_9": null,
+            "m_10": null,
+            "n_1": null,
+            "n_2": null,
+            "n_3": null,
+            "n_4": null,
+            "n_5": null,
+            "n_6": null,
+            "n_7": null,
+            "n_8": null,
+            "n_9": null,
+            "n_10": null
+        }
+    }
+]
+
 // Activities Mapping here
 
+
 function mapActivitiesToHubspot(activity) {
-  const mappedActivity = {
-    payload: {
-      hs_activity_type: "CALL",
-      hs_timestamp: activity.startDateTime,
-      hs_call_title: activity.name,
-      hs_call_body: activity.details,
-      hs_call_status: activity.status === 2 ? "COMPLETED" : "IN_PROGRESS",
-      orderwise_activity_id: activity.id
+  return {
+    properties: {
+      hs_timestamp: activity?.startDateTime
+        ? new Date(activity.startDateTime).getTime()
+        : Date.now(),
+
+      hs_call_title: activity?.name || "Test Call",
+
+      hs_call_body: activity?.details || "Call details",
+
+      hs_call_status: activity?.status === 2 ? "COMPLETED" : "IN_PROGRESS"
+
+      // Only include this if the property exists in HubSpot
+      // orderwise_activity_id: activity?.id
     }
   };
-
-  return mappedActivity;
 }
+
+
+
+// function mapActivitiesToHubspot(activity, contactId, companyId) {
+//   return {
+//     properties: {
+//       hs_timestamp: activity?.startDateTime
+//         ? new Date(activity.startDateTime).getTime()
+//         : Date.now(),
+
+//       hs_call_title: activity?.name || "Test Call",
+//       hs_call_body: activity?.details || "Call details",
+//       hs_call_status: activity?.status === 2 ? "COMPLETED" : "IN_PROGRESS"
+//     },
+
+//     associations: [
+//       {
+//         to: { id: contactId },
+//         types: [
+//           {
+//             associationCategory: "HUBSPOT_DEFINED",
+//             associationTypeId: 194
+//           }
+//         ]
+//       },
+//       {
+//         to: { id: companyId },
+//         types: [
+//           {
+//             associationCategory: "HUBSPOT_DEFINED",
+//             associationTypeId: 182
+//           }
+//         ]
+//       }
+//     ]
+//   };
+// }
 
 
 

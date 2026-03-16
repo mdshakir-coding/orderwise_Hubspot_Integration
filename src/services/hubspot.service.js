@@ -300,15 +300,6 @@ async function upsertHubSpotObject(
 //     .toLocaleString("en-US", { hour12: true })
 //     .replace(",", "");
 
-//   const payload = {
-//     properties: {
-//       hs_timestamp: new Date().toISOString(),
-//       hs_email_subject: subject,
-//       hs_email_direction: "EMAIL",
-//       hs_email_status: "SENT",
-//       hs_email_text: body,
-//       // "orderwise_id": orderWiseId // Optional: helps tracking
-//     },
 //     associations: [
 //       {
 //         to: { id: contactId },
@@ -393,6 +384,10 @@ async function createContactCompanyAssociations(associations) {
     return null;
   }
 }
+
+
+ 
+
 
 export {
   searchObjectByKey,
