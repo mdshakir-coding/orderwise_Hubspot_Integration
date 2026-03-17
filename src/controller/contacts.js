@@ -304,6 +304,7 @@ async function processContacts(company, hubspotCompanyId) {
     logger.info(`Fetched ${contacts.length} contacts`);
 
     let associationArr = [];
+    let allContactsId = [];
 
     for (const contact of contacts) {
       try {
@@ -323,6 +324,10 @@ async function processContacts(company, hubspotCompanyId) {
           orderwiseId,
           payload
         );
+
+        if (hubspotContactId) {
+          allContactsId.push(hubspotContactId);
+        }
 
         // allContactsId.push(hubspotContactId );
         if (hubspotContactId && hubspotCompanyId) {
@@ -347,15 +352,15 @@ async function processContacts(company, hubspotCompanyId) {
       );
       const activityPayload = mapActivitiesToHubspot(
         activity,
-        // hubspotContactId, // HubSpot Contact ID
-        hubspotCompanyId // HubSpot Company ID
+        hubspotCompanyId,
+        allContactsId // 👈 Pass the array here
       );
 
       logger.info(
         `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`
       );
 
-      const result = await createObject("calls", activityPayload);
+      const result = await createObject("emails", activityPayload);
       logger.info(
         `Created activity in HubSpot: ${JSON.stringify(result, null, 2)}`
       );
@@ -372,7 +377,7 @@ async function processContacts(company, hubspotCompanyId) {
       logger.warn("No associations to create.");
     }
   } catch (error) {
-    logger.error("Error fetching contacts:", error.message);
+    logger.error("Error fetching contacts:", error);
   }
 }
 

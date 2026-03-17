@@ -326,62 +326,44 @@ function isRecordUpToDate(payload, searchResult) {
 // }
 
 // function mapActivitiesToHubspot(activity, contactId, companyId) {
-function mapActivitiesToHubspot(activity, companyId) {
+function mapActivitiesToHubspot(activity, companyId, contactIds = []) {
   const start = activity?.startDateTime
     ? new Date(activity.startDateTime).getTime()
     : Date.now();
 
-  const duration =
-    activity?.endDateTime && activity?.startDateTime
-      ? new Date(activity.endDateTime) - new Date(activity.startDateTime)
-      : 0;
+  // 1. DEFINE the variables first
+  const isIncoming = activity?.name?.toLowerCase().includes("incoming");
+  const emailDirection = isIncoming ? "INCOMING_EMAIL" : "EMAIL";
 
-  const direction = activity?.name?.toLowerCase().includes("incoming")
-    ? "INBOUND"
-    : "OUTBOUND";
+  // 2. BUILD the associations array
+  const associations = [
+    {
+      to: { id: String(companyId) },
+      types: [
+        { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
+      ],
+    },
+  ];
 
-  const status =
-    activity?.status === 2
-      ? "COMPLETED"
-      : activity?.status === 1
-      ? "IN_PROGRESS"
-      : "SCHEDULED";
+  contactIds.forEach((contactId) => {
+    associations.push({
+      to: { id: String(contactId) },
+      types: [
+        { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+      ],
+    });
+  });
 
+  // 3. RETURN the object using the defined variables
   return {
     properties: {
       hs_timestamp: start,
-
-      hs_call_title: activity?.name || "Phone Call",
-
-      hs_call_body: activity?.details || "",
-
-      hs_call_status: status,
-
-      hs_call_direction: direction,
-
-      hs_call_duration: duration,
+      hs_email_subject: activity?.name || "Email Activity",
+      hs_email_text: activity?.details || "",
+      hs_email_direction: emailDirection, // Now this is defined!
+      hs_email_status: "SENT",
     },
-
-    associations: [
-      // {
-      //   to: { id: contactId },
-      //   types: [
-      //     {
-      //       associationCategory: "HUBSPOT_DEFINED",
-      //       associationTypeId: 194,
-      //     },
-      //   ],
-      // },
-      {
-        to: { id: companyId },
-        types: [
-          {
-            associationCategory: "HUBSPOT_DEFINED",
-            associationTypeId: 182,
-          },
-        ],
-      },
-    ],
+    associations,
   };
 }
 
