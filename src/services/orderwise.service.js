@@ -347,6 +347,74 @@ function activityAssociations(contactId, companyId) {
   return associations;
 }
 
+
+// get CRMR ecord By Id
+async function getCRMRecordById(id, retry = true) {
+  try {
+    const url = `http://sslvpn.caretrade.co/OWAPI/crm/${id}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`, // use your dynamic token
+      },
+    });
+
+    if (!response.ok) {
+      if (retry) {
+        logger.info("Token expired, retrying after login...");
+        await login(); // your existing login function
+        return getCRMRecordById(id, false);
+      }
+      // throw new Error(`Request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    logger.info("CRM Record:", data);
+
+    return data;
+  } catch (error) {
+    logger.error("Error fetching CRM record:", error);
+    return null;
+  }
+}
+
+//  get customer by id
+
+async function getCustomerById(customerId, retry = true) {
+  try {
+    const url = `http://sslvpn.caretrade.co/OWAPI/customers/${customerId}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`, // dynamic token
+      },
+    });
+
+    if (!response.ok) {
+      if (retry) {
+        logger.info("Token expired, retrying after login...");
+        await login(); // your existing login function
+        return getCustomerById(customerId, false);
+      }
+      // throw new Error(`Request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    logger.info("Customer Record:", data);
+
+    return data;
+  } catch (error) {
+    logger.error("Error fetching customer:", error);
+    return null;
+  }
+}
+
 export {
   getContactsbyId,
   login,
@@ -356,4 +424,6 @@ export {
   postContactsToHubspot,
   fetchOrderwiseActivities,
   activityAssociations,
+  getCRMRecordById,
+  getCustomerById,
 };

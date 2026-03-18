@@ -228,7 +228,7 @@ function isRecordUpToDate(payload, searchResult) {
 }
 
 // function mapActivitiesToHubspot(activity, contactId, companyId) {
-function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact) {
+function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact,customerRecord) {
   const start = activity?.startDateTime
     ? new Date(activity.startDateTime).getTime()
     : Date.now();
@@ -275,7 +275,7 @@ function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact) {
       hs_email_status: "SENT",
       // These are the proper v3 internal names for headers
       hs_email_headers: JSON.stringify({
-        from: { email: activity?.from || "test@example.com" },
+        from: { email: activity?.from || customerRecord?.statementName },
         to: [{ email: contact?.email || contact?.name }],
       }),
     },
