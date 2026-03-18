@@ -5,6 +5,7 @@ import {
   getContacts,
   postCompaniesToHubspot,
   postContactsToHubspot,
+  getContactsbyId,
 } from "../services/orderwise.service.js";
 
 import {
@@ -358,7 +359,7 @@ async function processContacts(company, hubspotCompanyId) {
   try {
     // 2. Fetch contacts
     const contacts = await getContacts(company?.id);
-    logger.info(`Fetched ${contacts.length} contacts`);
+    logger.info(`Contacts Fetched ${contacts.length} contacts`);
 
     let associationArr = [];
     let allContactsId = [];
@@ -422,10 +423,37 @@ async function processContacts(company, hubspotCompanyId) {
       }
 
       // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
+
+      const contact = await getContactsbyId(
+        company.id,
+        activity.customerContact
+      );
+      logger.info(
+        `Fetched contact: ${JSON.stringify(contact, null, 2)} ${
+          contact.length
+        } ${activity.customerContact} | ${company.id}`
+      );
+
+      const payload = mapContactsToHubspot(contact[0], company);
+      logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
+
+      const orderwiseId = String(payload?.properties?.orderwiseid) || null;
+      // --- USE THE NEW UPSERT FUNCTION ---
+      let hubspotContactId = null;
+      hubspotContactId = await upsertContact(
+        "contacts",
+        "orderwiseid",
+        orderwiseId,
+        payload
+      );
+      if (hubspotContactId) {
+        allContactsId.push(hubspotContactId);
+      }
       const activityPayload = mapActivitiesToHubspot(
         activity,
         hubspotCompanyId,
-        allContactsId // 👈 Pass the array here
+        allContactsId, // 👈 Pass the array here
+        contact[0]
       );
 
       logger.info(
