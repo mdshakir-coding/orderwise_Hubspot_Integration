@@ -19,7 +19,7 @@ import { createContactCompanyAssociations } from "../services/hubspot.service.js
 import { fetchOrderwiseActivities } from "../services/orderwise.service.js";
 import { mapActivitiesToHubspot } from "../utils/helper.js";
 import { activityAssociations } from "../services/orderwise.service.js";
-import{createHubspotEmailIfValid} from "../services/hubspot.service.js";
+import { createHubspotEmailIfValid } from "../services/hubspot.service.js";
 
 import {
   companyPayload,
@@ -103,68 +103,66 @@ async function upsertCompany(company) {
   }
 }
 
-async function syncContacts(companies = [
-   {
-        "id": 3345,
-        "accountNumber": "IWIL010",
-        "statementName": "William Wilson CWO",
-        "statementAddress1": "90 Nutfield Road",
-        "statementAddress2": "Drumcru",
-        "statementAddress3": "Lisnaskea",
-        "statementTown": "ENNISKILLEN",
-        "statementPostcode": "BT92 0QT",
-        "statementCounty": "Co Fermanagh",
-        "statementCountry": "United Kingdom",
-        "statementEmail": null,
-        "statementWebsite": "078 17253902",
-        "statementTelephone": null,
-        "statementFax": null,
-        "statementCountryCode": "GB",
-        "invoiceName": null,
-        "invoiceAddress1": null,
-        "invoiceAddress2": null,
-        "invoiceAddress3": null,
-        "invoiceTown": null,
-        "invoicePostcode": null,
-        "invoiceCounty": null,
-        "invoiceCountry": null,
-        "invoiceEmail": null,
-        "invoiceWebsite": null,
-        "invoiceTelephone": null,
-        "invoiceFax": null,
-        "invoiceCountryCode": null,
-        "vatNumber": null,
-        "defaultTaxCodeId": 2,
-        "overrideVariantTax": false,
-        "nominalCodeId": 6,
-        "departmentCodeId": 6,
-        "costCentreId": 0,
-        "currencyId": 1,
-        "defaultDeliveryMethodId": 28,
-        "defaultDeliveryGroupId": null,
-        "usePriceList": null,
-        "priceListId": 861,
-        "priceListDiscountPercent": 0.00,
-        "multisaverDiscountGroupId": null,
-        "discountStructureId": null,
-        "defaultStockLocationId": 12,
-        "accountCustomer": true,
-        "onHold": false,
-        "manualOnHold": false,
-        "overCreditTerms": false,
-        "creditLimit": 800.00,
-        "openOrdersValue": 0.00,
-        "availableToSpend": 800.00,
-        "balance": 0.00
-    },]) {
+async function syncContacts(
+  companies = [
+    {
+      id: 3345,
+      accountNumber: "IWIL010",
+      statementName: "William Wilson CWO",
+      statementAddress1: "90 Nutfield Road",
+      statementAddress2: "Drumcru",
+      statementAddress3: "Lisnaskea",
+      statementTown: "ENNISKILLEN",
+      statementPostcode: "BT92 0QT",
+      statementCounty: "Co Fermanagh",
+      statementCountry: "United Kingdom",
+      statementEmail: null,
+      statementWebsite: "078 17253902",
+      statementTelephone: null,
+      statementFax: null,
+      statementCountryCode: "GB",
+      invoiceName: null,
+      invoiceAddress1: null,
+      invoiceAddress2: null,
+      invoiceAddress3: null,
+      invoiceTown: null,
+      invoicePostcode: null,
+      invoiceCounty: null,
+      invoiceCountry: null,
+      invoiceEmail: null,
+      invoiceWebsite: null,
+      invoiceTelephone: null,
+      invoiceFax: null,
+      invoiceCountryCode: null,
+      vatNumber: null,
+      defaultTaxCodeId: 2,
+      overrideVariantTax: false,
+      nominalCodeId: 6,
+      departmentCodeId: 6,
+      costCentreId: 0,
+      currencyId: 1,
+      defaultDeliveryMethodId: 28,
+      defaultDeliveryGroupId: null,
+      usePriceList: null,
+      priceListId: 861,
+      priceListDiscountPercent: 0.0,
+      multisaverDiscountGroupId: null,
+      discountStructureId: null,
+      defaultStockLocationId: 12,
+      accountCustomer: true,
+      onHold: false,
+      manualOnHold: false,
+      overCreditTerms: false,
+      creditLimit: 800.0,
+      openOrdersValue: 0.0,
+      availableToSpend: 800.0,
+      balance: 0.0,
+    },
+  ]
+) {
   try {
     for (const company of companies) {
-      
       try {
-        if(company?.id !== 3345) {
-          logger.warn(`Skipping company with missing ID: ${JSON.stringify(company.id)}`);
-          continue;
-        }
         // upsert comany in hubspot
         const upsertCompanyId = await upsertCompany(company);
 
@@ -404,12 +402,26 @@ async function processContacts(company, hubspotCompanyId) {
 
     const activities = await fetchOrderwiseActivities(company.id);
     // logger.info(`Fetched Activity: ${JSON.stringify(activities, null, 2)} ${activities.length}`);
-    logger.info(`Activity Associations: ${JSON.stringify(activities.length)}`);
+    logger.info(`Activity Length: ${JSON.stringify(activities.length)}`);
 
     for (const activity of activities) {
       logger.info(
         `Processing orderwise activity ${JSON.stringify(activity, null, 2)}`
       );
+
+      // This regex looks for 'email' with an optional hyphen after the 'e'
+      const emailRegex = /e-?mail/i;
+
+      const hasEmailInName = activity.name && emailRegex.test(activity.name);
+
+      if (!hasEmailInName) {
+        logger.info(
+          `Skipping activity ${activity.id}: Name '${activity.name}' does not contain 'Email' or 'E-mail'`
+        );
+        continue;
+      }
+
+      // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
       const activityPayload = mapActivitiesToHubspot(
         activity,
         hubspotCompanyId,
@@ -421,7 +433,10 @@ async function processContacts(company, hubspotCompanyId) {
       );
 
       // call the email function with validation
-      const emailResult = await createHubspotEmailIfValid(activity, activityPayload);
+      const emailResult = await createHubspotEmailIfValid(
+        activity,
+        activityPayload
+      );
       logger.info(
         `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
       );

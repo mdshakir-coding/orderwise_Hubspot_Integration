@@ -273,7 +273,13 @@ function mapActivitiesToHubspot(activity, companyId, contactIds = []) {
       hs_email_text: activity?.details || "",
       hs_email_direction: emailDirection,
       hs_email_status: "SENT",
+      // These are the proper v3 internal names for headers
+      hs_email_headers: JSON.stringify({
+        from: { email: activity?.from || "test@example.com" },
+        to: [{ email: activity?.to || "test@example.com" }],
+      }),
     },
+
     associations,
   };
 }

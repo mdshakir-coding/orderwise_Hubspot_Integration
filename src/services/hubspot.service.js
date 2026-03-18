@@ -383,26 +383,30 @@ async function createContactCompanyAssociations(associations) {
   }
 }
 
-
 async function createHubspotEmailIfValid(activity, payload) {
-    // 1. Check if the 'name' field exists and includes the word "Email"
-    const hasEmailInName = activity.name && activity.name.toLowerCase().includes("email");
+  // 1. Check if the 'name' field exists and includes the word "Email"
+  // const hasEmailInName =
+  //   activity.name && activity.name.toLowerCase().includes("email");
 
-    if (!hasEmailInName) {
-        logger.info(`Skipping activity ${activity.id}: Name '${activity.name}' does not contain 'Email'`);
-        return null; // Return null to signal a skip
-    }
+  // if (!hasEmailInName) {
+  //   logger.info(
+  //     `Skipping activity ${activity.id}: Name '${activity.name}' does not contain 'Email'`
+  //   );
+  //   return null; // Return null to signal a skip
+  // }
 
-    // 2. If valid, create in HubSpot
-    try {
-        const result = await createObject("emails", payload);
-        return result;
-    } catch (error) {
-        logger.error(`Error creating HubSpot activity ${activity.id}: ${error.message}`);
-        return null;
-    }
+  // 2. If valid, create in HubSpot
+  try {
+    const result = await createObject("emails", payload);
+    return result;
+  } catch (error) {
+    logger.error(
+      `Error creating HubSpot activity ${activity.id}: ${error.message}`,
+      error
+    );
+    return null;
+  }
 }
-
 
 export {
   searchObjectByKey,
