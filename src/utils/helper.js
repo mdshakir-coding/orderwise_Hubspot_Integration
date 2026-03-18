@@ -228,7 +228,7 @@ function isRecordUpToDate(payload, searchResult) {
 }
 
 // function mapActivitiesToHubspot(activity, contactId, companyId) {
-function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact,customerRecord) {
+function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact,customerRecord,upsertedCompanyId) {
   const start = activity?.startDateTime
     ? new Date(activity.startDateTime).getTime()
     : Date.now();
@@ -239,6 +239,14 @@ function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact,cu
 
   // 2. BUILD the associations array
   const associations = [
+
+     {
+      to: { id: String(upsertedCompanyId) },
+      types: [
+        { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
+      ],
+    },
+
     {
       to: { id: String(companyId) },
       types: [
