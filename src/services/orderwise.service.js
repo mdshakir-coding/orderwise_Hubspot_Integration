@@ -71,7 +71,7 @@ async function getCompanies(retry = true) {
 
       try {
         await syncContacts(data);
-        return; // TODO : remove after testing
+        // return; // TODO : remove after testing
       } catch (error) {
         logger.error("Error syncing contacts:", error);
       }
