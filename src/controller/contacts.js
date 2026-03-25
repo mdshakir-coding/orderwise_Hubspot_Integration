@@ -30,6 +30,7 @@ import {
   extractValidEmail,
   isCompanySame,
   isRecordUpToDate,
+  isLastAmended,
 } from "../utils/helper.js";
 
 /**
@@ -49,7 +50,7 @@ import {
 async function upsertCompany(company) {
   try {
     logger.info(
-      `Processing orderwise company ${JSON.stringify(company, null, 2)}`,
+      `Processing orderwise company ${JSON.stringify(company, null, 2)}`
     );
 
     const payload = companyPayload(company);
@@ -70,7 +71,7 @@ async function upsertCompany(company) {
       "companies",
       "orderwiseid",
       company.id,
-      properties,
+      properties
     );
 
     if (searchResult) {
@@ -89,7 +90,7 @@ async function upsertCompany(company) {
       const updatedCompany = await updateObject(
         "companies",
         companyId,
-        payload,
+        payload
       );
 
       return updatedCompany.id;
@@ -107,62 +108,62 @@ async function upsertCompany(company) {
 }
 
 async function syncContacts(companies) {
-//   companies = [
-//     {
-//       id: 3345,
-//       accountNumber: "IWIL010",
-//       statementName: "William Wilson CWO",
-//       statementAddress1: "90 Nutfield Road",
-//       statementAddress2: "Drumcru",
-//       statementAddress3: "Lisnaskea",
-//       statementTown: "ENNISKILLEN",
-//       statementPostcode: "BT92 0QT",
-//       statementCounty: "Co Fermanagh",
-//       statementCountry: "United Kingdom",
-//       statementEmail: null,
-//       statementWebsite: "078 17253902",
-//       statementTelephone: null,
-//       statementFax: null,
-//       statementCountryCode: "GB",
-//       invoiceName: null,
-//       invoiceAddress1: null,
-//       invoiceAddress2: null,
-//       invoiceAddress3: null,
-//       invoiceTown: null,
-//       invoicePostcode: null,
-//       invoiceCounty: null,
-//       invoiceCountry: null,
-//       invoiceEmail: null,
-//       invoiceWebsite: null,
-//       invoiceTelephone: null,
-//       invoiceFax: null,
-//       invoiceCountryCode: null,
-//       vatNumber: null,
-//       defaultTaxCodeId: 2,
-//       overrideVariantTax: false,
-//       nominalCodeId: 6,
-//       departmentCodeId: 6,
-//       costCentreId: 0,
-//       currencyId: 1,
-//       defaultDeliveryMethodId: 28,
-//       defaultDeliveryGroupId: null,
-//       usePriceList: null,
-//       priceListId: 861,
-//       priceListDiscountPercent: 0.0,
-//       multisaverDiscountGroupId: null,
-//       discountStructureId: null,
-//       defaultStockLocationId: 12,
-//       accountCustomer: true,
-//       onHold: false,
-//       manualOnHold: false,
-//       overCreditTerms: false,
-//       creditLimit: 800.0,
-//       openOrdersValue: 0.0,
-//       availableToSpend: 800.0,
-//       balance: 0.0,
-//     },
-//   ],
-// ) {
+  //   companies = [
+  //     {
+  //       id: 3345,
+  //       accountNumber: "IWIL010",
+  //       statementName: "William Wilson CWO",
+  //       statementAddress1: "90 Nutfield Road",
+  //       statementAddress2: "Drumcru",
+  //       statementAddress3: "Lisnaskea",
+  //       statementTown: "ENNISKILLEN",
+  //       statementPostcode: "BT92 0QT",
+  //       statementCounty: "Co Fermanagh",
+  //       statementCountry: "United Kingdom",
+  //       statementEmail: null,
+  //       statementWebsite: "078 17253902",
+  //       statementTelephone: null,
+  //       statementFax: null,
+  //       statementCountryCode: "GB",
+  //       invoiceName: null,
+  //       invoiceAddress1: null,
+  //       invoiceAddress2: null,
+  //       invoiceAddress3: null,
+  //       invoiceTown: null,
+  //       invoicePostcode: null,
+  //       invoiceCounty: null,
+  //       invoiceCountry: null,
+  //       invoiceEmail: null,
+  //       invoiceWebsite: null,
+  //       invoiceTelephone: null,
+  //       invoiceFax: null,
+  //       invoiceCountryCode: null,
+  //       vatNumber: null,
+  //       defaultTaxCodeId: 2,
+  //       overrideVariantTax: false,
+  //       nominalCodeId: 6,
+  //       departmentCodeId: 6,
+  //       costCentreId: 0,
+  //       currencyId: 1,
+  //       defaultDeliveryMethodId: 28,
+  //       defaultDeliveryGroupId: null,
+  //       usePriceList: null,
+  //       priceListId: 861,
+  //       priceListDiscountPercent: 0.0,
+  //       multisaverDiscountGroupId: null,
+  //       discountStructureId: null,
+  //       defaultStockLocationId: 12,
+  //       accountCustomer: true,
+  //       onHold: false,
+  //       manualOnHold: false,
+  //       overCreditTerms: false,
+  //       creditLimit: 800.0,
+  //       openOrdersValue: 0.0,
+  //       availableToSpend: 800.0,
+  //       balance: 0.0,
+  //     },
+  //   ],
+  // ) {
   try {
     for (const company of companies) {
       try {
@@ -173,7 +174,7 @@ async function syncContacts(companies) {
         // return; // TODO : remove after testing
       } catch (error) {
         logger.error(
-          `Error processing company ${company.id}: ${error.message}`,
+          `Error processing company ${company.id}: ${error.message}`
         );
       }
     }
@@ -221,7 +222,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
       objectType,
       searchKey,
       searchValue,
-      contactProperties,
+      contactProperties
     );
 
     // 2. Fallback search (Email)
@@ -231,13 +232,13 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
       payload?.properties?.email
     ) {
       logger.info(
-        `ID search failed for ${searchValue}, searching by email: ${payload.properties.email}`,
+        `ID search failed for ${searchValue}, searching by email: ${payload.properties.email}`
       );
       searchResult = await searchObjectByKey(
         objectType,
         "email",
         payload.properties.email,
-        contactProperties,
+        contactProperties
       );
     }
 
@@ -248,7 +249,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
     // 3. Idempotency Check
     if (hubspotId && isRecordUpToDate(payload, searchResult)) {
       logger.info(
-        `Idempotency Match: ${objectType} ${hubspotId} is already up-to-date. Skipping.`,
+        `Idempotency Match: ${objectType} ${hubspotId} is already up-to-date. Skipping.`
       );
       return hubspotId;
     }
@@ -267,7 +268,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
     } catch (createError) {
       if (createError.response?.status === 409) {
         logger.warn(
-          `409 Conflict: Record exists but hidden from search (${searchValue})`,
+          `409 Conflict: Record exists but hidden from search (${searchValue})`
         );
         return null;
       }
@@ -290,20 +291,20 @@ async function processContacts(company, hubspotCompanyId) {
     for (const contact of contacts) {
       try {
         logger.info(
-          `Processing orderwise contact ${JSON.stringify(contact, null, 2)}`,
+          `Processing orderwise contact ${JSON.stringify(contact, null, 2)}`
         );
         // Contact Payload Mapping
         const payload = mapContactsToHubspot(contact, company);
         logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
-         const orderwiseId = String(payload?.properties?.orderwiseid) || null;
-       
+        const orderwiseId = String(payload?.properties?.orderwiseid) || null;
+
         // --- USE THE NEW UPSERT FUNCTION ---
         let hubspotContactId = null;
         hubspotContactId = await upsertContact(
           "contacts",
           "orderwiseid",
           orderwiseId,
-          payload,
+          payload
         );
 
         if (hubspotContactId) {
@@ -319,7 +320,7 @@ async function processContacts(company, hubspotCompanyId) {
         }
       } catch (error) {
         logger.error(
-          `Error processing contact ${contact.id}: ${error.message}`,
+          `Error processing contact ${contact.id}: ${error.message}`
         );
       }
     }
@@ -329,17 +330,17 @@ async function processContacts(company, hubspotCompanyId) {
 
     for (const activity of activities) {
       logger.info(
-        `Processing orderwise activity ${JSON.stringify(activity, null, 2)}`,
+        `Processing orderwise activity ${JSON.stringify(activity, null, 2)}`
       );
 
       // This regex looks for 'email' with an optional hyphen after the 'e'
       const emailRegex = /e-?mail/i;
 
       const hasEmailInName = activity.name && emailRegex.test(activity.name);
-
-      if (!hasEmailInName) {
+      // Check if the 'name' field exists and includes the word "Email" and isAmendedDateTiméis greater than lastSyncTime
+      if (!hasEmailInName || !isLastAmended(activity?.lastAmendedDateTime)) {
         logger.info(
-          `Skipping activity ${activity.id}: Name '${activity.name}' does not contain 'Email' or 'E-mail'`,
+          `Skipping activity ${activity.id}: Name '${activity.name}' does not contain 'Email' or 'E-mail'`
         );
         continue;
       }
@@ -348,12 +349,12 @@ async function processContacts(company, hubspotCompanyId) {
 
       const contact = await getContactsbyId(
         company.id,
-        activity.customerContact,
+        activity.customerContact
       );
       logger.info(
         `Fetched contact: ${JSON.stringify(contact, null, 2)} ${
           contact.length
-        } ${activity.customerContact} | ${company.id}`,
+        } ${activity.customerContact} | ${company.id}`
       );
 
       const payload = mapContactsToHubspot(contact[0], company);
@@ -366,39 +367,35 @@ async function processContacts(company, hubspotCompanyId) {
         "contacts",
         "orderwiseid",
         orderwiseId,
-        payload,
+        payload
       );
       if (hubspotContactId) {
         allContactsId.push(hubspotContactId);
       }
 
-
       //  call the get CRM Record By Id function
-        const crmRecord = await getCRMRecordById(activity.assignedToUserId);
-        logger.info(
-          `CRM Record for contact ${contact.id}: ${JSON.stringify(
-            crmRecord,
-            null,
-            2,
-          )}`,
-        );
+      const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+      logger.info(
+        `CRM Record for contact ${contact.id}: ${JSON.stringify(
+          crmRecord,
+          null,
+          2
+        )}`
+      );
 
+      // call the get Customer By Id function
+      const customerRecord = await getCustomerById(crmRecord.customerId);
+      logger.info(
+        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+          customerRecord,
+          null,
+          2
+        )}`
+      );
 
-       // call the get Customer By Id function
-       const customerRecord = await getCustomerById(crmRecord.customerId);
-       logger.info(
-         `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-           customerRecord,
-           null,
-           2,
-         )}`,
-       );
-
-       // upsert company in hubspot 
-        const upsertedCompanyId = await upsertCompany(customerRecord);
-        logger.info(
-          `Upserted Company ID: ${upsertedCompanyId}`,
-        );
+      // upsert company in hubspot
+      const upsertedCompanyId = await upsertCompany(customerRecord);
+      logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
 
       const activityPayload = mapActivitiesToHubspot(
         activity,
@@ -406,22 +403,21 @@ async function processContacts(company, hubspotCompanyId) {
         allContactsId, // 👈 Pass the array here
         contact[0],
         customerRecord,
-        upsertedCompanyId,
+        upsertedCompanyId
       );
 
       logger.info(
-        `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`,
+        `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`
       );
 
       // call the email function with validation
       const emailResult = await createHubspotEmailIfValid(
         activity,
-        activityPayload,
+        activityPayload
       );
       logger.info(
-        `Email creation result: ${JSON.stringify(emailResult, null, 2)}`,
+        `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
       );
-
     }
 
     // 🔹 Bulk association after loop
@@ -429,7 +425,7 @@ async function processContacts(company, hubspotCompanyId) {
       const result = await createContactCompanyAssociations(associationArr);
 
       logger.info(
-        `Bulk association completed: ${JSON.stringify(result, null, 2)}`,
+        `Bulk association completed: ${JSON.stringify(result, null, 2)}`
       );
     } else {
       logger.warn("No associations to create.");

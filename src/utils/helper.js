@@ -228,7 +228,14 @@ function isRecordUpToDate(payload, searchResult) {
 }
 
 // function mapActivitiesToHubspot(activity, contactId, companyId) {
-function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact,customerRecord,upsertedCompanyId) {
+function mapActivitiesToHubspot(
+  activity,
+  companyId,
+  contactIds = [],
+  contact,
+  customerRecord,
+  upsertedCompanyId
+) {
   const start = activity?.startDateTime
     ? new Date(activity.startDateTime).getTime()
     : Date.now();
@@ -239,8 +246,7 @@ function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact,cu
 
   // 2. BUILD the associations array
   const associations = [
-
-     {
+    {
       to: { id: String(upsertedCompanyId) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
@@ -292,7 +298,44 @@ function mapActivitiesToHubspot(activity, companyId, contactIds = [], contact,cu
   };
 }
 
+// function isLastAmendedDateTime(lastAmededDateTime, lastSyncDateTime) {
+//   if (lastAmededDateTime > lastSyncDateTime) {
+//     return true;
+//   }
+//   return false;
+// }
+// Mock storage - replace with localStorage.getItem/setItem if in a browser
+let persistenceLayer = {
+  lastSync: "2026-03-20T10:00:00Z",
+};
+
+/**
+ * Gets the stored lastSync datetime
+ */
+function getLastSync() {
+  return persistenceLayer.lastSync ? new Date(persistenceLayer.lastSync) : null;
+}
+
+/**
+ * Updates the stored lastSync to the current time or a specific timestamp
+ */
+function updateLastSync(newTimestamp = new Date()) {
+  persistenceLayer.lastSync = newTimestamp.toISOString();
+  console.log(`Sync timestamp updated to: ${persistenceLayer.lastSync}`);
+}
+
+/**
+ * Refactored: Checks if the record was amended after the last sync
+ */
+function isLastAmended(lastAmended) {
+  const lastSync = getLastSync();
+  // Convert to Date objects to ensure valid comparison
+  return new Date(lastAmended) > new Date(lastSync);
+}
 export {
+  getLastSync,
+  updateLastSync,
+  isLastAmended,
   isRecordUpToDate,
   cleanProps,
   companyPayload,
