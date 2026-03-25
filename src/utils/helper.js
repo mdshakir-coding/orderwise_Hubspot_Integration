@@ -1,5 +1,11 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+
+import { fileURLToPath } from "url";
+
+// Fix __dirname in ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function cleanProps(obj) {
   const cleaned = {};
@@ -325,7 +331,7 @@ function getLastSync() {
   try {
     // 1. Check if file exists, if not, initialize it
     if (!fs.existsSync(SYNC_FILE)) {
-      const epoch = new Date(0).toISOString();
+      const epoch = new Date().toISOString();
       saveToFile(epoch);
       return new Date(epoch);
     }
@@ -336,7 +342,7 @@ function getLastSync() {
     return new Date(json.lastSync);
   } catch (error) {
     console.error("Error reading sync file, defaulting to Epoch:", error);
-    return new Date(0);
+    return new Date();
   }
 }
 

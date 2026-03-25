@@ -107,7 +107,64 @@ async function upsertCompany(company) {
   }
 }
 
-async function syncContacts(companies) {
+// This function is used to sync companies from Orderwise to HubSpot and then sync the associated contacts and activities for each company. It iterates through the list of companies, upserts each company in HubSpot, and then processes the contacts and activities related to that company. The function also includes error handling to log any issues that occur during the sync process.
+async function syncContacts(
+  companies = [
+    {
+      id: 3345,
+      accountNumber: "IWIL010",
+      statementName: "William Wilson CWO",
+      statementAddress1: "90 Nutfield Road",
+      statementAddress2: "Drumcru",
+      statementAddress3: "Lisnaskea",
+      statementTown: "ENNISKILLEN",
+      statementPostcode: "BT92 0QT",
+      statementCounty: "Co Fermanagh",
+      statementCountry: "United Kingdom",
+      statementEmail: null,
+      statementWebsite: "078 17253902",
+      statementTelephone: null,
+      statementFax: null,
+      statementCountryCode: "GB",
+      invoiceName: null,
+      invoiceAddress1: null,
+      invoiceAddress2: null,
+      invoiceAddress3: null,
+      invoiceTown: null,
+      invoicePostcode: null,
+      invoiceCounty: null,
+      invoiceCountry: null,
+      invoiceEmail: null,
+      invoiceWebsite: null,
+      invoiceTelephone: null,
+      invoiceFax: null,
+      invoiceCountryCode: null,
+      vatNumber: null,
+      defaultTaxCodeId: 2,
+      overrideVariantTax: false,
+      nominalCodeId: 6,
+      departmentCodeId: 6,
+      costCentreId: 0,
+      currencyId: 1,
+      defaultDeliveryMethodId: 28,
+      defaultDeliveryGroupId: null,
+      usePriceList: null,
+      priceListId: 861,
+      priceListDiscountPercent: 0.0,
+      multisaverDiscountGroupId: null,
+      discountStructureId: null,
+      defaultStockLocationId: 12,
+      accountCustomer: true,
+      onHold: false,
+      manualOnHold: false,
+      overCreditTerms: false,
+      creditLimit: 800.0,
+      openOrdersValue: 0.0,
+      availableToSpend: 800.0,
+      balance: 0.0,
+    },
+  ]
+) {
   //   companies = [
   //     {
   //       id: 3345,
@@ -171,7 +228,6 @@ async function syncContacts(companies) {
         const upsertCompanyId = await upsertCompany(company);
 
         const upsertContact = await processContacts(company, upsertCompanyId);
-        // return; // TODO : remove after testing
       } catch (error) {
         logger.error(
           `Error processing company ${company.id}: ${error.message}`
@@ -349,7 +405,6 @@ async function processContacts(company, hubspotCompanyId) {
         logger.info(
           `Skipping activity ${activity.id}: ${reason} (Name: '${activity.name}')`
         );
-        continue;
         continue;
       }
 

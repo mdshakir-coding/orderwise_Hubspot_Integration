@@ -71,7 +71,6 @@ async function getCompanies(retry = true) {
 
       try {
         await syncContacts(data);
-        // return; // TODO : remove after testing
       } catch (error) {
         logger.error("Error syncing contacts:", error);
       }
@@ -81,10 +80,7 @@ async function getCompanies(retry = true) {
       lastId = data[data.length - 1].id;
       // setLastId(lastId); // Save lastId after each successful fetch
 
-      logger.info(
-        `Fetched batch. Total: ${JSON.stringify(allCustomers.length)}`
-      );
-      // logger.info(`Fetched batch. Total: ${JSON.stringify(data[data.length - 1], null, 2)}`);
+      logger.info(`Fetched batch. Total: ${data.length}`);
     }
 
     // return allCustomers || [];
