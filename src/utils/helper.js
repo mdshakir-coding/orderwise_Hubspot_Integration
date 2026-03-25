@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 function cleanProps(obj) {
   const cleaned = {};
 
@@ -312,26 +315,62 @@ let persistenceLayer = {
 /**
  * Gets the stored lastSync datetime
  */
+
+const SYNC_FILE = path.join(__dirname, "sync_state.json");
+
+/**
+ * Gets lastSync from file; creates file with Epoch date if missing.
+ */
 function getLastSync() {
-  return persistenceLayer.lastSync ? new Date(persistenceLayer.lastSync) : null;
+  try {
+    // 1. Check if file exists, if not, initialize it
+    if (!fs.existsSync(SYNC_FILE)) {
+      const epoch = new Date(0).toISOString();
+      saveToFile(epoch);
+      return new Date(epoch);
+    }
+
+    // 2. Read and parse the file
+    const data = fs.readFileSync(SYNC_FILE, "utf8");
+    const json = JSON.parse(data);
+    return new Date(json.lastSync);
+  } catch (error) {
+    console.error("Error reading sync file, defaulting to Epoch:", error);
+    return new Date(0);
+  }
 }
 
 /**
- * Updates the stored lastSync to the current time or a specific timestamp
+ * Saves a new timestamp to the JSON file
  */
 function updateLastSync(newTimestamp = new Date()) {
-  persistenceLayer.lastSync = newTimestamp.toISOString();
-  console.log(`Sync timestamp updated to: ${persistenceLayer.lastSync}`);
+  const isoString = newTimestamp.toISOString();
+  saveToFile(isoString);
+}
+
+// Helper to handle the actual writing
+function saveToFile(timestamp) {
+  const data = JSON.stringify({ lastSync: timestamp }, null, 2);
+  fs.writeFileSync(SYNC_FILE, data);
 }
 
 /**
  * Refactored: Checks if the record was amended after the last sync
  */
-function isLastAmended(lastAmended) {
-  const lastSync = getLastSync();
-  // Convert to Date objects to ensure valid comparison
-  return new Date(lastAmended) > new Date(lastSync);
+// function isLastAmended(lastAmended) {
+//   const lastSync = getLastSync();
+//   // Convert to Date objects to ensure valid comparison
+//   return new Date(lastAmended) > new Date(lastSync);
+// }
+
+function isLastAmended(lastAmendedFromServer) {
+  const lastSyncFromFile = getLastSync();
+  const amendedDate = new Date(lastAmendedFromServer);
+
+  // If the server date is HIGHER (newer) than our last sync file, we need to update.
+  return amendedDate > lastSyncFromFile;
 }
+
 export {
   getLastSync,
   updateLastSync,

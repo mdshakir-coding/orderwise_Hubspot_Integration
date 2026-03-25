@@ -288,6 +288,8 @@ async function processContacts(company, hubspotCompanyId) {
     let associationArr = [];
     let allContactsId = [];
 
+    // Contact Upsert In Hubspot
+
     for (const contact of contacts) {
       try {
         logger.info(
@@ -328,6 +330,8 @@ async function processContacts(company, hubspotCompanyId) {
     const activities = await fetchOrderwiseActivities(company.id);
     logger.info(`Activity Length: ${JSON.stringify(activities.length)}`);
 
+    // Activity insert In Hubspot
+
     for (const activity of activities) {
       logger.info(
         `Processing orderwise activity ${JSON.stringify(activity, null, 2)}`
@@ -339,9 +343,13 @@ async function processContacts(company, hubspotCompanyId) {
       const hasEmailInName = activity.name && emailRegex.test(activity.name);
       // Check if the 'name' field exists and includes the word "Email" and isAmendedDateTiméis greater than lastSyncTime
       if (!hasEmailInName || !isLastAmended(activity?.lastAmendedDateTime)) {
+        const reason = !hasEmailInName
+          ? "Missing 'Email' in name"
+          : "Not amended since last sync";
         logger.info(
-          `Skipping activity ${activity.id}: Name '${activity.name}' does not contain 'Email' or 'E-mail'`
+          `Skipping activity ${activity.id}: ${reason} (Name: '${activity.name}')`
         );
+        continue;
         continue;
       }
 

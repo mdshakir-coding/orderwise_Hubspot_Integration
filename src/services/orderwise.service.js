@@ -347,7 +347,6 @@ function activityAssociations(contactId, companyId) {
   return associations;
 }
 
-
 // get CRMR ecord By Id
 async function getCRMRecordById(id, retry = true) {
   try {
