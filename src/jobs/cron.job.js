@@ -8,7 +8,7 @@ import { updateLastSync } from "../utils/helper.js";
 import { getCompanies } from "../services/orderwise.service.js";
 
 let isRunning = false; // Flag to prevent overlapping executions
-const scheduler = "30 17 * * *"; // Run at 5:30 PM
+const scheduler = "15 12 * * *"; // Run at 5:30 PM
 
 // cron.schedule(scheduler, async () => {
 //   console.log(`Running fetchData at ${new Date().toLocaleString()}`);
@@ -16,29 +16,35 @@ const scheduler = "30 17 * * *"; // Run at 5:30 PM
 // });
 
 logger.info(
-  `Daily Scheduler Initialized.It will run everyday at 5:30 PM or Cron : ${scheduler}`
+  `Daily Scheduler Initialized.It will run everyday at 12 : 15 PM or Cron : ${scheduler}`
 );
 
-cron.schedule(scheduler, async () => {
-  const date = new Date();
-  try {
-    if (isRunning) {
-      logger.info("Cron job is already running. Skipping execution.");
-      return;
+cron.schedule(
+  scheduler,
+  async () => {
+    const date = new Date();
+    try {
+      if (isRunning) {
+        logger.info("Cron job is already running. Skipping execution.");
+        return;
+      }
+      isRunning = true;
+      logger.info(`Cron started at ${new Date().toISOString()}`);
+
+      await getCompanies();
+
+      logger.info("✅ Cron finished");
+    } catch (error) {
+      logger.error("❌ Cron error:", error);
+    } finally {
+      updateLastSync(date); // Update the last sync timestamp after the cron job runs
+      isRunning = false;
     }
-    isRunning = true;
-    logger.info("Daily scheduler started at 4:30 PM");
-
-    await getCompanies();
-
-    logger.info("✅ Cron finished");
-  } catch (error) {
-    logger.error("❌ Cron error:", error);
-  } finally {
-    updateLastSync(date); // Update the last sync timestamp after the cron job runs
-    isRunning = false;
+  },
+  {
+    timezone: "UTC",
   }
-});
+);
 
 // cron.schedule("* * * * * *", async () => {
 //   try {
