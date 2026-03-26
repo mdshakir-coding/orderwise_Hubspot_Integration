@@ -329,20 +329,22 @@ const SYNC_FILE = path.join(__dirname, "sync_state.json");
  */
 function getLastSync() {
   try {
-    // 1. Check if file exists, if not, initialize it
+    // 1. If file does NOT exist → return yesterday's date
     if (!fs.existsSync(SYNC_FILE)) {
-      const epoch = new Date().toISOString();
-      saveToFile(epoch);
-      return new Date(epoch);
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      return yesterday;
     }
 
     // 2. Read and parse the file
     const data = fs.readFileSync(SYNC_FILE, "utf8");
     const json = JSON.parse(data);
+
     return new Date(json.lastSync);
   } catch (error) {
-    console.error("Error reading sync file, defaulting to Epoch:", error);
-    return new Date();
+    console.error("Error reading sync file, defaulting to yesterday:", error);
+
+    // fallback → yesterday
+    return new Date(Date.now() - 24 * 60 * 60 * 1000);
   }
 }
 
@@ -369,8 +371,8 @@ function saveToFile(timestamp) {
 //   return new Date(lastAmended) > new Date(lastSync);
 // }
 
-function isLastAmended(lastAmendedFromServer) {
-  const lastSyncFromFile = getLastSync();
+function isLastAmended(lastAmendedFromServer, lastSyncFromFile) {
+  // const lastSyncFromFile = getLastSync();
   const amendedDate = new Date(lastAmendedFromServer);
 
   // If the server date is HIGHER (newer) than our last sync file, we need to update.

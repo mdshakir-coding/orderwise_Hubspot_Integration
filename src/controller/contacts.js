@@ -31,6 +31,7 @@ import {
   isCompanySame,
   isRecordUpToDate,
   isLastAmended,
+  getLastSync,
 } from "../utils/helper.js";
 
 /**
@@ -387,6 +388,7 @@ async function processContacts(company, hubspotCompanyId) {
     logger.info(`Activity Length: ${JSON.stringify(activities.length)}`);
 
     // Activity insert In Hubspot
+    const lastSyncFromFile = getLastSync().toISOString().replace("Z", "");
 
     for (const activity of activities) {
       logger.info(
@@ -398,7 +400,10 @@ async function processContacts(company, hubspotCompanyId) {
 
       const hasEmailInName = activity.name && emailRegex.test(activity.name);
       // Check if the 'name' field exists and includes the word "Email" and isAmendedDateTiméis greater than lastSyncTime
-      if (!hasEmailInName || !isLastAmended(activity?.lastAmendedDateTime)) {
+      if (
+        !hasEmailInName ||
+        !isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)
+      ) {
         const reason = !hasEmailInName
           ? "Missing 'Email' in name"
           : "Not amended since last sync";
