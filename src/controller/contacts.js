@@ -228,6 +228,12 @@ async function syncContacts(
         // upsert comany in hubspot
         const upsertCompanyId = await upsertCompany(company);
 
+        if (!upsertCompanyId) {
+          logger.warn(`Failed to upsert company ${company.id}`);
+        }
+
+        logger.info(`Processed company in hubspot ${upsertCompanyId}`);
+
         const upsertContact = await processContacts(company, upsertCompanyId);
       } catch (error) {
         logger.error(
