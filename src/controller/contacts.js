@@ -301,15 +301,15 @@ async function processContacts(company, hubspotCompanyId) {
       //   !hasEmailInName ||
       //   !isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)
       // ) {
-      if (!isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)) {
-        const reason = !hasEmailInName
-          ? "Missing 'Email' in name"
-          : "Not amended since last sync";
-        logger.info(
-          `Skipping activity ${activity.id}: ${reason} (Name: '${activity.name}')`
-        );
-        continue;
-      }
+      // if (!isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)) {
+      //   const reason = !hasEmailInName
+      //     ? "Missing 'Email' in name"
+      //     : "Not amended since last sync";
+      //   logger.info(
+      //     `Skipping activity ${activity.id}: ${reason} (Name: '${activity.name}')`
+      //   );
+      //   continue;
+      // }
 
       // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
 
