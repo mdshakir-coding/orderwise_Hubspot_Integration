@@ -301,12 +301,9 @@ async function processContacts(company, hubspotCompanyId) {
       //   !hasEmailInName ||
       //   !isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)
       // ) {
-      if (!isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)) {
-        const reason = !hasEmailInName
-          ? "Missing 'Email' in name"
-          : "Not amended since last sync";
+      if (activity?.id !== 20058) {
         logger.info(
-          `Skipping activity ${activity.id}: ${reason} (Name: '${activity.name}')`
+          `Skipping activity ${activity.id}: Name : (Name: '${activity.name}')`
         );
         continue;
       }
