@@ -331,7 +331,7 @@ function getLastSync() {
   try {
     // 1. If file does NOT exist → return yesterday's date
     if (!fs.existsSync(SYNC_FILE)) {
-      const yesterday = new Date(Date.now() - 48 * 60 * 60 * 1000); // change this to 24 from  48 for 1 day old records
+      const yesterday = new Date(Date.now() - 120 * 60 * 60 * 1000); // change this to 24 from  120 for 1 day old records
       return yesterday;
     }
 
