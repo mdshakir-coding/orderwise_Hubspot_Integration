@@ -8,7 +8,7 @@ import { updateLastSync } from "../utils/helper.js";
 import { getCompanies } from "../services/orderwise.service.js";
 
 let isRunning = false; // Flag to prevent overlapping executions
-const scheduler = "15 12 * * *"; // Run at 5:30 PM
+const scheduler = "30 11 * * *"; // Run at 4:30 PM
 
 // cron.schedule(scheduler, async () => {
 //   console.log(`Running fetchData at ${new Date().toLocaleString()}`);
@@ -16,7 +16,7 @@ const scheduler = "15 12 * * *"; // Run at 5:30 PM
 // });
 
 logger.info(
-  `Daily Scheduler Initialized.It will run everyday at 12 : 15 PM or Cron : ${scheduler}`
+  `Daily Scheduler Initialized.It will run everyday at 4 : 30 PM or Cron : ${scheduler}`
 );
 
 cron.schedule(

@@ -109,119 +109,7 @@ async function upsertCompany(company) {
 }
 
 // This function is used to sync companies from Orderwise to HubSpot and then sync the associated contacts and activities for each company. It iterates through the list of companies, upserts each company in HubSpot, and then processes the contacts and activities related to that company. The function also includes error handling to log any issues that occur during the sync process.
-async function syncContacts(
-  companies = [
-    {
-      id: 3345,
-      accountNumber: "IWIL010",
-      statementName: "William Wilson CWO",
-      statementAddress1: "90 Nutfield Road",
-      statementAddress2: "Drumcru",
-      statementAddress3: "Lisnaskea",
-      statementTown: "ENNISKILLEN",
-      statementPostcode: "BT92 0QT",
-      statementCounty: "Co Fermanagh",
-      statementCountry: "United Kingdom",
-      statementEmail: null,
-      statementWebsite: "078 17253902",
-      statementTelephone: null,
-      statementFax: null,
-      statementCountryCode: "GB",
-      invoiceName: null,
-      invoiceAddress1: null,
-      invoiceAddress2: null,
-      invoiceAddress3: null,
-      invoiceTown: null,
-      invoicePostcode: null,
-      invoiceCounty: null,
-      invoiceCountry: null,
-      invoiceEmail: null,
-      invoiceWebsite: null,
-      invoiceTelephone: null,
-      invoiceFax: null,
-      invoiceCountryCode: null,
-      vatNumber: null,
-      defaultTaxCodeId: 2,
-      overrideVariantTax: false,
-      nominalCodeId: 6,
-      departmentCodeId: 6,
-      costCentreId: 0,
-      currencyId: 1,
-      defaultDeliveryMethodId: 28,
-      defaultDeliveryGroupId: null,
-      usePriceList: null,
-      priceListId: 861,
-      priceListDiscountPercent: 0.0,
-      multisaverDiscountGroupId: null,
-      discountStructureId: null,
-      defaultStockLocationId: 12,
-      accountCustomer: true,
-      onHold: false,
-      manualOnHold: false,
-      overCreditTerms: false,
-      creditLimit: 800.0,
-      openOrdersValue: 0.0,
-      availableToSpend: 800.0,
-      balance: 0.0,
-    },
-  ]
-) {
-  //   companies = [
-  //     {
-  //       id: 3345,
-  //       accountNumber: "IWIL010",
-  //       statementName: "William Wilson CWO",
-  //       statementAddress1: "90 Nutfield Road",
-  //       statementAddress2: "Drumcru",
-  //       statementAddress3: "Lisnaskea",
-  //       statementTown: "ENNISKILLEN",
-  //       statementPostcode: "BT92 0QT",
-  //       statementCounty: "Co Fermanagh",
-  //       statementCountry: "United Kingdom",
-  //       statementEmail: null,
-  //       statementWebsite: "078 17253902",
-  //       statementTelephone: null,
-  //       statementFax: null,
-  //       statementCountryCode: "GB",
-  //       invoiceName: null,
-  //       invoiceAddress1: null,
-  //       invoiceAddress2: null,
-  //       invoiceAddress3: null,
-  //       invoiceTown: null,
-  //       invoicePostcode: null,
-  //       invoiceCounty: null,
-  //       invoiceCountry: null,
-  //       invoiceEmail: null,
-  //       invoiceWebsite: null,
-  //       invoiceTelephone: null,
-  //       invoiceFax: null,
-  //       invoiceCountryCode: null,
-  //       vatNumber: null,
-  //       defaultTaxCodeId: 2,
-  //       overrideVariantTax: false,
-  //       nominalCodeId: 6,
-  //       departmentCodeId: 6,
-  //       costCentreId: 0,
-  //       currencyId: 1,
-  //       defaultDeliveryMethodId: 28,
-  //       defaultDeliveryGroupId: null,
-  //       usePriceList: null,
-  //       priceListId: 861,
-  //       priceListDiscountPercent: 0.0,
-  //       multisaverDiscountGroupId: null,
-  //       discountStructureId: null,
-  //       defaultStockLocationId: 12,
-  //       accountCustomer: true,
-  //       onHold: false,
-  //       manualOnHold: false,
-  //       overCreditTerms: false,
-  //       creditLimit: 800.0,
-  //       openOrdersValue: 0.0,
-  //       availableToSpend: 800.0,
-  //       balance: 0.0,
-  //     },
-  //   ],
-  // ) {
+async function syncContacts(companies = []) {
   try {
     for (const company of companies) {
       try {
@@ -342,6 +230,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
   }
 }
 
+// This function handles contacts and emails for the associated company
 async function processContacts(company, hubspotCompanyId) {
   try {
     // 2. Fetch contacts
@@ -390,6 +279,8 @@ async function processContacts(company, hubspotCompanyId) {
       }
     }
 
+    // fetch All Activities for the following company Id
+
     const activities = await fetchOrderwiseActivities(company.id);
     logger.info(`Activity Length: ${JSON.stringify(activities.length)}`);
 
@@ -406,10 +297,11 @@ async function processContacts(company, hubspotCompanyId) {
 
       const hasEmailInName = activity.name && emailRegex.test(activity.name);
       // Check if the 'name' field exists and includes the word "Email" and isAmendedDateTiméis greater than lastSyncTime
-      if (
-        !hasEmailInName ||
-        !isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)
-      ) {
+      // if (
+      //   !hasEmailInName ||
+      //   !isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)
+      // ) {
+      if (!isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)) {
         const reason = !hasEmailInName
           ? "Missing 'Email' in name"
           : "Not amended since last sync";
