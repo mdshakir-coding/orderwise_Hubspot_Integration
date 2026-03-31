@@ -344,38 +344,92 @@ function activityAssociations(contactId, companyId) {
 }
 
 // get CRMR ecord By Id
-async function getCRMRecordById(id, retry = true) {
-  try {
-    const url = `http://sslvpn.caretrade.co/OWAPI/crm/${id}`;
+// async function getCRMRecordById(id, retry = true) {
+//   try {
+//     const url = `http://sslvpn.caretrade.co/OWAPI/crm/${id}`;
 
-    const response = await fetch(url, {
-      method: "GET",
+//     const response = await fetch(url, {
+//       method: "GET",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: `Bearer ${token}`, // use your dynamic token
+//       },
+//     });
+
+//     if (!response.ok) {
+//       if (retry) {
+//         logger.info("Token expired, retrying after login...");
+//         await login(); // your existing login function
+//         return getCRMRecordById(id, false);
+//       }
+//       // throw new Error(`Request failed: ${response.status}`);
+//     }
+
+//     const data = await response.json();
+
+//     logger.info("CRM Record:", data);
+
+//     return data;
+//   } catch (error) {
+//     logger.error("Error fetching CRM record:", error);
+//     return null;
+//   }
+// }
+
+async function getCRMRecordById(id, retry = true) {
+  const url = `http://sslvpn.caretrade.co/OWAPI/crm/${id}`;
+
+  try {
+    const response = await axios.get(url, {
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${token}`, // use your dynamic token
+        Authorization: `Bearer ${token}`, // Ensure 'token' is accessible here
       },
+      // Axios timeout is helpful for VPN-based APIs
+      timeout: 10000,
     });
 
-    if (!response.ok) {
-      if (retry) {
-        logger.info("Token expired, retrying after login...");
-        await login(); // your existing login function
-        return getCRMRecordById(id, false);
-      }
-      // throw new Error(`Request failed: ${response.status}`);
+    // Axios automatically parses JSON.
+    // We just need to check if the data actually exists.
+    if (!response.data) {
+      logger.warn(`CRM Record ${id} returned an empty response body.`);
+      return null;
     }
 
-    const data = await response.json();
-
-    logger.info("CRM Record:", data);
-
-    return data;
+    logger.info(`CRM Record ${id} fetched successfully.`);
+    return response.data;
   } catch (error) {
-    logger.error("Error fetching CRM record:", error);
+    // 1. Handle Token Expiry (401)
+    if (error.response?.status === 401 && retry) {
+      logger.info("Token expired, retrying after login...");
+      await login();
+      // Important: Ensure the global 'token' variable is updated by login() before retrying
+      return getCRMRecordById(id, false);
+    }
+
+    // 2. Handle "Not Found" (404) or other API errors
+    if (error.response) {
+      // The server responded with a status code outside the 2xx range
+      logger.error(
+        `Orderwise API Error [${error.response.status}]: ${JSON.stringify(
+          error.response.data
+        )}`
+      );
+    } else if (error.request) {
+      // The request was made but no response was received (Timeout/Network issue)
+      logger.error(
+        `Orderwise Network Error: No response received for ID ${id}`
+      );
+    } else {
+      // Something happened in setting up the request
+      logger.error(`Error setting up CRM fetch for ID ${id}:`, error.message);
+    }
+
+    // Always return null so your controller (contacts.js) doesn't crash
+    // when trying to read .customerId
     return null;
   }
 }
-
 //  get customer by id
 
 // async function getCustomerById(customerId, retry = true) {

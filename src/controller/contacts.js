@@ -404,6 +404,8 @@ async function processContacts(company, hubspotCompanyId) {
       logger.info(
         `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
       );
+
+      return; // TODO: remove
     }
   } catch (error) {
     logger.error("Error fetching contacts:", error);
