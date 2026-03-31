@@ -337,6 +337,19 @@ async function processContacts(company, hubspotCompanyId) {
         crmRecord.contactId
       );
 
+      // call the get Customer By Id function
+      const customerRecord = await getCustomerById(crmRecord.customerId);
+
+      logger.info(
+        `CRM Record Contact : ${JSON.stringify(
+          (contact, null, 2)
+        )}: Company Record${JSON.stringify(
+          customerRecord,
+          null,
+          2
+        )} |CRM Record | ${JSON.stringify(crmRecord, null, 2)}`
+      );
+
       if (contact) {
         logger.info(
           `Fetched contact: ${JSON.stringify(contact, null, 2)} ${
@@ -360,19 +373,14 @@ async function processContacts(company, hubspotCompanyId) {
           allContactsId.push(hubspotContactId);
         }
       }
-      logger.info(
-        `CRM Record ${contact?.id}: ${JSON.stringify(crmRecord, null, 2)}`
-      );
 
-      // call the get Customer By Id function
-      const customerRecord = await getCustomerById(crmRecord.customerId);
-      logger.info(
-        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-          customerRecord,
-          null,
-          2
-        )}`
-      );
+      // logger.info(
+      //   `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+      //     customerRecord,
+      //     null,
+      //     2
+      //   )}`
+      // );
 
       // upsert company in hubspot
       const upsertedCompanyId = await upsertCompany(customerRecord);
@@ -407,3 +415,29 @@ async function processContacts(company, hubspotCompanyId) {
 }
 
 export { syncContacts };
+
+/**
+ * 
+ * 27|orderwise-hubspot-integration  | 2026-03-31 02:15:45 pm | info | CRM Record 648: {
+27|orderwise-hubspot-integration  |   "id": 61,
+27|orderwise-hubspot-integration  |   "description": null,
+27|orderwise-hubspot-integration  |   "trackId": 3,
+27|orderwise-hubspot-integration  |   "milestoneId": 13,
+27|orderwise-hubspot-integration  |   "customerId": 2450,
+27|orderwise-hubspot-integration  |   "contactId": 648,
+27|orderwise-hubspot-integration  |   "notes": "Telemarketing/marketing to customers",
+27|orderwise-hubspot-integration  |   "assignedUserId": 15,
+27|orderwise-hubspot-integration  |   "entryPointId": null,
+27|orderwise-hubspot-integration  |   "sourceId": null,
+27|orderwise-hubspot-integration  |   "complete": true,
+27|orderwise-hubspot-integration  |   "expectedValue": 0,
+27|orderwise-hubspot-integration  |   "expectedCloseDate": null,
+27|orderwise-hubspot-integration  |   "closedDatetime": "2016-01-21T13:56:35.23",
+27|orderwise-hubspot-integration  |   "closedByUserId": 15,
+27|orderwise-hubspot-integration  |   "closeReasonId": 9,
+27|orderwise-hubspot-integration  |   "closedComments": null,
+27|orderwise-hubspot-integration  |   "inputByUserId": 15,
+27|orderwise-hubspot-integration  |   "inputDateTime": "2015-11-05T08:40:00.523",
+27|orderwise-hubspot-integration  |   "analysis": null
+27|orderwise-hubspot-integration  | }
+ */
