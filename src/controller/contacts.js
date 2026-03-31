@@ -369,10 +369,12 @@ async function processContacts(company, hubspotCompanyId) {
         // const upsertedCompanyId = await upsertCompany(customerRecord);
         // logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
 
+        let contactIds = allContactsId;
+
         const activityPayload = mapActivitiesToHubspot(
           activity,
           hubspotCompanyId,
-          allContactsId, // 👈 Pass the array here
+          contactIds, // 👈 Pass the array here
           company,
           contact
           // upsertedCompanyId
