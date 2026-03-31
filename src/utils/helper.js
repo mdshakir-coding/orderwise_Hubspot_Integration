@@ -237,6 +237,74 @@ function isRecordUpToDate(payload, searchResult) {
 }
 
 // function mapActivitiesToHubspot(activity, contactId, companyId) {
+// function mapActivitiesToHubspot(
+//   activity,
+//   companyId,
+//   contactIds = [],
+//   contactId,
+//   customerRecord,
+//   contact
+// ) {
+//   const start = activity?.startDateTime
+//     ? new Date(activity.startDateTime).getTime()
+//     : Date.now();
+
+//   // 1. DEFINE the variables first
+//   const isIncoming = activity?.name?.toLowerCase().includes("incoming");
+//   const emailDirection = isIncoming ? "INCOMING_EMAIL" : "FORWARDED_EMAIL";
+
+//   // 2. BUILD the associations array
+//   const associations = [
+//     {
+//       to: { id: String(companyId) },
+//       types: [
+//         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
+//       ],
+//     },
+//     {
+//       to: { id: String(contactId) },
+//       types: [
+//         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+//       ],
+//     },
+//   ];
+
+//   contactIds.forEach((contactId) => {
+//     associations.push({
+//       to: { id: String(contactId) },
+//       types: [
+//         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+//       ],
+//     });
+//   });
+
+//   // 3. RETURN the object using the defined variables
+//   return {
+//     // properties: {
+//     //   //  type: "EMAIL",
+//     //    type: activity?.type || "EMAIL",
+//     //   hs_timestamp: start,
+//     //   hs_email_subject: activity?.name || "Email Activity",
+//     //   hs_email_text: activity?.details || "",
+//     //   hs_email_direction: emailDirection, // Now this is defined!
+//     //   hs_email_status: "SENT",
+//     // },
+//     properties: {
+//       hs_timestamp: start,
+//       hs_email_subject: activity?.name,
+//       hs_email_text: activity?.details,
+//       hs_email_direction: emailDirection,
+//       hs_email_status: "SENT",
+//       // These are the proper v3 internal names for headers
+//       hs_email_headers: JSON.stringify({
+//         from: { email: customerRecord?.statementEmail || activity?.from },
+//         to: [{ email: contact?.email || contact?.name }],
+//       }),
+//     },
+
+//     associations,
+//   };
+// }
 function mapActivitiesToHubspot(
   activity,
   companyId,
@@ -249,63 +317,58 @@ function mapActivitiesToHubspot(
     ? new Date(activity.startDateTime).getTime()
     : Date.now();
 
-  // 1. DEFINE the variables first
   const isIncoming = activity?.name?.toLowerCase().includes("incoming");
   const emailDirection = isIncoming ? "INCOMING_EMAIL" : "FORWARDED_EMAIL";
 
-  // 2. BUILD the associations array
-  const associations = [
-    {
+  // 1. Prepare unique, valid Contact IDs
+  // We combine the single contactId and the array, then filter out nulls/undefined/strings of "null"
+  const rawContactIds = [contactId, ...contactIds];
+  const validContactIds = [...new Set(rawContactIds)] // Remove duplicates
+    .filter((id) => id && id !== "null" && id !== "undefined");
+
+  const associations = [];
+
+  // 2. Add Company Association (if valid)
+  if (companyId && companyId !== "null") {
+    associations.push({
       to: { id: String(companyId) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
       ],
-    },
-    {
-      to: { id: String(contactId) },
-      types: [
-        { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
-      ],
-    },
-  ];
+    });
+  }
 
-  contactIds.forEach((contactId) => {
+  // 3. Add Contact Associations
+  validContactIds.forEach((id) => {
     associations.push({
-      to: { id: String(contactId) },
+      to: { id: String(id) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
       ],
     });
   });
 
-  // 3. RETURN the object using the defined variables
+  // 4. Clean up Email Headers
+  // Fallback to "noreply@domain.com" or similar if emails are missing to avoid "n/a"
+  const fromEmail =
+    customerRecord?.statementEmail || activity?.from || "unknown@orderwise.com";
+  const toEmail = contact?.email || "unknown@orderwise.com";
+
   return {
-    // properties: {
-    //   //  type: "EMAIL",
-    //    type: activity?.type || "EMAIL",
-    //   hs_timestamp: start,
-    //   hs_email_subject: activity?.name || "Email Activity",
-    //   hs_email_text: activity?.details || "",
-    //   hs_email_direction: emailDirection, // Now this is defined!
-    //   hs_email_status: "SENT",
-    // },
     properties: {
       hs_timestamp: start,
-      hs_email_subject: activity?.name,
-      hs_email_text: activity?.details,
+      hs_email_subject: activity?.name || "Email Activity",
+      hs_email_text: activity?.details || "",
       hs_email_direction: emailDirection,
       hs_email_status: "SENT",
-      // These are the proper v3 internal names for headers
       hs_email_headers: JSON.stringify({
-        from: { email: customerRecord?.statementEmail || activity?.from },
-        to: [{ email: contact?.email || contact?.name }],
+        from: { email: fromEmail },
+        to: [{ email: toEmail }],
       }),
     },
-
     associations,
   };
 }
-
 // function isLastAmendedDateTime(lastAmededDateTime, lastSyncDateTime) {
 //   if (lastAmededDateTime > lastSyncDateTime) {
 //     return true;
