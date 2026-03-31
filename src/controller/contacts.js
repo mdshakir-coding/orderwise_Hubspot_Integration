@@ -289,102 +289,106 @@ async function processContacts(company, hubspotCompanyId) {
     const lastSyncFromFile = getLastSync().toISOString().replace("Z", "");
 
     for (const activity of activities) {
-      logger.info(
-        `Processing orderwise activity ${JSON.stringify(activity, null, 2)}`
-      );
+      try {
+        logger.info(
+          `Processing orderwise activity ${JSON.stringify(activity, null, 2)}`
+        );
 
-      // This regex looks for 'email' with an optional hyphen after the 'e'
-      const emailRegex = /e-?mail/i;
+        // This regex looks for 'email' with an optional hyphen after the 'e'
+        const emailRegex = /e-?mail/i;
 
-      const hasEmailInName = activity.name && emailRegex.test(activity.name);
-      // Check if the 'name' field exists and includes the word "Email" and isAmendedDateTiméis greater than lastSyncTime
-      // if (
-      //   !hasEmailInName ||
-      //   !isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)
-      // ) {
-      // if (!isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)) {
-      //   const reason = !hasEmailInName
-      //     ? "Missing 'Email' in name"
-      //     : "Not amended since last sync";
-      //   logger.info(
-      //     `Skipping activity ${activity.id}: ${reason} (Name: '${activity.name}')`
-      //   );
-      //   continue;
-      // }
+        const hasEmailInName = activity.name && emailRegex.test(activity.name);
+        // Check if the 'name' field exists and includes the word "Email" and isAmendedDateTiméis greater than lastSyncTime
+        // if (
+        //   !hasEmailInName ||
+        //   !isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)
+        // ) {
+        // if (!isLastAmended(activity?.lastAmendedDateTime, lastSyncFromFile)) {
+        //   const reason = !hasEmailInName
+        //     ? "Missing 'Email' in name"
+        //     : "Not amended since last sync";
+        //   logger.info(
+        //     `Skipping activity ${activity.id}: ${reason} (Name: '${activity.name}')`
+        //   );
+        //   continue;
+        // }
 
-      // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
+        // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
 
-      const contact = await getContactsbyId(
-        company?.id,
-        activity?.customerContact
-      );
-      logger.info(
-        `Fetched contact: ${JSON.stringify(contact, null, 2)}| ${
-          activity.customerContact
-        } | ${company.id}`
-      );
+        const contact = await getContactsbyId(
+          company?.id,
+          activity?.customerContact
+        );
+        logger.info(
+          `Fetched contact: ${JSON.stringify(contact, null, 2)}| ${
+            activity.customerContact
+          } | ${company.id}`
+        );
 
-      const payload = mapContactsToHubspot(contact, company);
-      logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
+        const payload = mapContactsToHubspot(contact, company);
+        logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
-      const orderwiseId = String(payload?.properties?.orderwiseid) || null;
-      // --- USE THE NEW UPSERT FUNCTION ---
-      let hubspotContactId = null;
-      hubspotContactId = await upsertContact(
-        "contacts",
-        "orderwiseid",
-        orderwiseId,
-        payload
-      );
-      if (hubspotContactId) {
-        allContactsId.push(hubspotContactId);
+        const orderwiseId = String(payload?.properties?.orderwiseid) || null;
+        // --- USE THE NEW UPSERT FUNCTION ---
+        let hubspotContactId = null;
+        hubspotContactId = await upsertContact(
+          "contacts",
+          "orderwiseid",
+          orderwiseId,
+          payload
+        );
+        if (hubspotContactId) {
+          allContactsId.push(hubspotContactId);
+        }
+
+        //  call the get CRM Record By Id function
+        const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+        logger.info(
+          `CRM Record for contact ${contact[0].id}: ${JSON.stringify(
+            crmRecord,
+            null,
+            2
+          )}`
+        );
+
+        // call the get Customer By Id function
+        const customerRecord = await getCustomerById(crmRecord.customerId);
+        logger.info(
+          `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+            customerRecord,
+            null,
+            2
+          )}`
+        );
+
+        // upsert company in hubspot
+        // const upsertedCompanyId = await upsertCompany(customerRecord);
+        // logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
+
+        const activityPayload = mapActivitiesToHubspot(
+          activity,
+          hubspotCompanyId,
+          allContactsId, // 👈 Pass the array here
+          hubspotContactId,
+          company
+          // upsertedCompanyId
+        );
+
+        logger.info(
+          `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`
+        );
+
+        // call the email function with validation
+        const emailResult = await createHubspotEmailIfValid(
+          activity,
+          activityPayload
+        );
+        logger.info(
+          `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
+        );
+      } catch (error) {
+        logger.error(`Error processing activity ${activity.id}:`, error);
       }
-
-      //  call the get CRM Record By Id function
-      const crmRecord = await getCRMRecordById(activity.assignedToUserId);
-      logger.info(
-        `CRM Record for contact ${contact[0].id}: ${JSON.stringify(
-          crmRecord,
-          null,
-          2
-        )}`
-      );
-
-      // call the get Customer By Id function
-      const customerRecord = await getCustomerById(crmRecord.customerId);
-      logger.info(
-        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-          customerRecord,
-          null,
-          2
-        )}`
-      );
-
-      // upsert company in hubspot
-      // const upsertedCompanyId = await upsertCompany(customerRecord);
-      // logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
-
-      const activityPayload = mapActivitiesToHubspot(
-        activity,
-        hubspotCompanyId,
-        allContactsId, // 👈 Pass the array here
-        hubspotContactId,
-        company
-        // upsertedCompanyId
-      );
-
-      logger.info(
-        `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`
-      );
-
-      // call the email function with validation
-      const emailResult = await createHubspotEmailIfValid(
-        activity,
-        activityPayload
-      );
-      logger.info(
-        `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
-      );
     }
 
     // 🔹 Bulk association after loop

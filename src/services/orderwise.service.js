@@ -203,7 +203,6 @@ async function getContactsbyId(companyId, contactId) {
   try {
     if (!token) await login();
 
-    // Use a URL object or template string to add the query parameter
     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?contact_id=${contactId}`;
 
     const response = await fetch(url, {
@@ -214,22 +213,33 @@ async function getContactsbyId(companyId, contactId) {
       },
     });
 
+    // 1. Check if the status is successful (200-299)
     if (!response.ok) {
-      logger.error(`API Error: ${response.status}`);
+      logger.error(`API Error: ${response.status} for URL: ${url}`);
       return null;
     }
 
-    const data = await response.json();
-
-    /**
-     * NOTE: Since the documentation says "Returns customer contact records" (plural),
-     * the API likely returns an ARRAY even if you provide a specific contact_id.
-     */
-    if (Array.isArray(data)) {
-      return data.length > 0 ? data[0] : null;
+    // 2. Check for "No Content" status
+    if (response.status === 204) {
+      return null;
     }
 
-    return data; // Return the object directly if it's not an array
+    // 3. Get the raw text first to avoid the SyntaxError
+    const text = await response.text();
+
+    if (!text) {
+      logger.info(`Empty response body for contact ${contactId}`);
+      return null;
+    }
+
+    // 4. Safely parse the JSON
+    try {
+      const data = JSON.parse(text);
+      return Array.isArray(data) ? data[0] || null : data;
+    } catch (parseError) {
+      logger.error(`Failed to parse JSON. Raw response: ${text}`);
+      return null;
+    }
   } catch (error) {
     logger.error("Error fetching contacts:", error);
     return null;
