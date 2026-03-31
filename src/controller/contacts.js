@@ -376,17 +376,11 @@ async function processContacts(company, hubspotCompanyId) {
         }
       }
 
-      // logger.info(
-      //   `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-      //     customerRecord,
-      //     null,
-      //     2
-      //   )}`
-      // );
-
-      // upsert company in hubspot
-      const upsertedCompanyId = await upsertCompany(customerRecord);
-      logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
+      if (customerRecord) {
+        // upsert company in hubspot
+        const upsertedCompanyId = await upsertCompany(customerRecord);
+        logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
+      }
 
       const activityPayload = mapActivitiesToHubspot(
         activity,
