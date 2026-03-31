@@ -333,13 +333,18 @@ async function processContacts(company, hubspotCompanyId) {
       //  call the get CRM Record By Id function
       const crmRecord = await getCRMRecordById(activity.assignedToUserId);
 
+      if (!crmRecord) {
+        logger.info(`CRM Record ${activity.assignedToUserId} not found.`);
+        continue;
+      }
+
       const contact = await getOrwerwiseContactbyId(
         crmRecord.customerId,
         crmRecord.contactId
       );
 
       // call the get Customer By Id function
-      const customerRecord = await getCustomerById(crmRecord.customerId);
+      const customerRecord = await getCustomerById(crmRecord?.customerId);
 
       logger.info(
         `CRM Record Contact : ${JSON.stringify(
