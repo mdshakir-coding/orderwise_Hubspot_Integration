@@ -331,27 +331,6 @@ async function processContacts(company, hubspotCompanyId) {
 
       //  call the get CRM Record By Id function
       const crmRecord = await getCRMRecordById(activity.assignedToUserId);
-      logger.info(
-        `CRM Record for contact ${contact.id}: ${JSON.stringify(
-          crmRecord,
-          null,
-          2
-        )}`
-      );
-
-      // call the get Customer By Id function
-      const customerRecord = await getCustomerById(crmRecord.customerId);
-      logger.info(
-        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-          customerRecord,
-          null,
-          2
-        )}`
-      );
-
-      // upsert company in hubspot
-      const upsertedCompanyId = await upsertCompany(customerRecord);
-      logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
 
       const contact = await getOrwerwiseContactbyId(
         crmRecord.customerId,
@@ -381,6 +360,23 @@ async function processContacts(company, hubspotCompanyId) {
           allContactsId.push(hubspotContactId);
         }
       }
+      logger.info(
+        `CRM Record ${contact?.id}: ${JSON.stringify(crmRecord, null, 2)}`
+      );
+
+      // call the get Customer By Id function
+      const customerRecord = await getCustomerById(crmRecord.customerId);
+      logger.info(
+        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+          customerRecord,
+          null,
+          2
+        )}`
+      );
+
+      // upsert company in hubspot
+      const upsertedCompanyId = await upsertCompany(customerRecord);
+      logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
 
       const activityPayload = mapActivitiesToHubspot(
         activity,
