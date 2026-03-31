@@ -415,7 +415,7 @@ async function processContacts(company, hubspotCompanyId) {
       logger.info(
         `Customer Contact: ${JSON.stringify(customerContact, null, 2)}`
       );
-      return; // TODO: remove
+      // return; // TODO: remove
     }
   } catch (error) {
     logger.error("Error fetching contacts:", error);
