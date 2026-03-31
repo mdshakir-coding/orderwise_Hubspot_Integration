@@ -324,7 +324,7 @@ async function processContacts(company, hubspotCompanyId) {
         } | ${company.id}`
       );
 
-      const payload = mapContactsToHubspot(contact[0], company);
+      const payload = mapContactsToHubspot(contact, company);
       logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
       const orderwiseId = String(payload?.properties?.orderwiseid) || null;
@@ -343,7 +343,7 @@ async function processContacts(company, hubspotCompanyId) {
       //  call the get CRM Record By Id function
       const crmRecord = await getCRMRecordById(activity.assignedToUserId);
       logger.info(
-        `CRM Record for contact ${contact.id}: ${JSON.stringify(
+        `CRM Record for contact ${contact[0].id}: ${JSON.stringify(
           crmRecord,
           null,
           2

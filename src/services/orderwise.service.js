@@ -148,11 +148,63 @@ async function getContacts(companyId) {
     return [];
   }
 }
+// async function getContactsbyId(companyId, contactId) {
+//   try {
+//     if (!token) await login();
+
+//     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?limit=1000&last_id=${contactId}`;
+
+//     const response = await fetch(url, {
+//       method: "GET",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: `Bearer ${token}`,
+//       },
+//     });
+
+//     const data = await response.json();
+
+//     // logger.info(
+//     //   `Fetched contact  ${JSON.stringify(
+//     //     data,
+//     //     null,
+//     //     2
+//     //   )} for company ${companyId}`
+//     // );
+
+//     return data;
+
+//     // if (!data || data.length === 0) break;
+
+//     //   allContacts.push(...data);
+//     //   // allContacts.push(
+//     //   //   ...data.map((contact) => ({
+//     //   //     ...contact,
+//     //   //     companyId,
+//     //   //   }))
+//     //   // );
+//     //   // return allContacts; //todo remove after testing
+//     //   // 3. Update lastId to the ID of the last contact in the current batch
+//     //   lastId = data[data.length - 1].id;
+
+//     //   logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
+
+//     //   // 4. If we got fewer than 1000, no more pages exist
+//     //   if (data.length < 1000) hasMore = false;
+//     // }
+//     // // }
+//     // return allContacts;
+//   } catch (error) {
+//     logger.error("Error fetching contacts:", error);
+//     return [];
+//   }
+// }
 async function getContactsbyId(companyId, contactId) {
   try {
     if (!token) await login();
 
-    const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts/${contactId}`;
+    // Use a URL object or template string to add the query parameter
+    const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?contact_id=${contactId}`;
 
     const response = await fetch(url, {
       method: "GET",
@@ -162,44 +214,27 @@ async function getContactsbyId(companyId, contactId) {
       },
     });
 
+    if (!response.ok) {
+      logger.error(`API Error: ${response.status}`);
+      return null;
+    }
+
     const data = await response.json();
 
-    // logger.info(
-    //   `Fetched contact  ${JSON.stringify(
-    //     data,
-    //     null,
-    //     2
-    //   )} for company ${companyId}`
-    // );
+    /**
+     * NOTE: Since the documentation says "Returns customer contact records" (plural),
+     * the API likely returns an ARRAY even if you provide a specific contact_id.
+     */
+    if (Array.isArray(data)) {
+      return data.length > 0 ? data[0] : null;
+    }
 
-    return data;
-
-    // if (!data || data.length === 0) break;
-
-    //   allContacts.push(...data);
-    //   // allContacts.push(
-    //   //   ...data.map((contact) => ({
-    //   //     ...contact,
-    //   //     companyId,
-    //   //   }))
-    //   // );
-    //   // return allContacts; //todo remove after testing
-    //   // 3. Update lastId to the ID of the last contact in the current batch
-    //   lastId = data[data.length - 1].id;
-
-    //   logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
-
-    //   // 4. If we got fewer than 1000, no more pages exist
-    //   if (data.length < 1000) hasMore = false;
-    // }
-    // // }
-    // return allContacts;
+    return data; // Return the object directly if it's not an array
   } catch (error) {
     logger.error("Error fetching contacts:", error);
-    return [];
+    return null;
   }
 }
-
 /** Post companies to HubSpot */
 async function postCompaniesToHubspot(
   searchObjectByKey,
