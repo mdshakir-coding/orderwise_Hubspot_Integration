@@ -231,6 +231,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
 }
 
 // This function handles contacts and emails for the associated company
+// Company is Orderwise Customer
 async function processContacts(company, hubspotCompanyId) {
   try {
     // 2. Fetch contacts
@@ -340,36 +341,36 @@ async function processContacts(company, hubspotCompanyId) {
       }
 
       //  call the get CRM Record By Id function
-      const crmRecord = await getCRMRecordById(activity.assignedToUserId);
-      logger.info(
-        `CRM Record for contact ${contact.id}: ${JSON.stringify(
-          crmRecord,
-          null,
-          2
-        )}`
-      );
+      // const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+      // logger.info(
+      //   `CRM Record for contact ${contact.id}: ${JSON.stringify(
+      //     crmRecord,
+      //     null,
+      //     2
+      //   )}`
+      // );
 
       // call the get Customer By Id function
-      const customerRecord = await getCustomerById(crmRecord.customerId);
-      logger.info(
-        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-          customerRecord,
-          null,
-          2
-        )}`
-      );
+      // const customerRecord = await getCustomerById(crmRecord.customerId);
+      // logger.info(
+      //   `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+      //     customerRecord,
+      //     null,
+      //     2
+      //   )}`
+      // );
 
       // upsert company in hubspot
-      const upsertedCompanyId = await upsertCompany(customerRecord);
-      logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
+      // const upsertedCompanyId = await upsertCompany(customerRecord);
+      // logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
 
       const activityPayload = mapActivitiesToHubspot(
         activity,
         hubspotCompanyId,
         allContactsId, // 👈 Pass the array here
-        contact[0],
-        customerRecord,
-        upsertedCompanyId
+        hubspotContactId,
+        company
+        // upsertedCompanyId
       );
 
       logger.info(

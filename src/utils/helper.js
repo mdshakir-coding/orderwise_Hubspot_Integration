@@ -256,28 +256,27 @@ function mapActivitiesToHubspot(
   // 2. BUILD the associations array
   const associations = [
     {
-      to: { id: String(upsertedCompanyId) },
-      types: [
-        { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
-      ],
-    },
-
-    {
       to: { id: String(companyId) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
       ],
     },
-  ];
-
-  contactIds.forEach((contactId) => {
-    associations.push({
-      to: { id: String(contactId) },
+    {
+      to: { id: String(contact) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
       ],
-    });
-  });
+    },
+  ];
+
+  // contactIds.forEach((contactId) => {
+  //   associations.push({
+  //     to: { id: String(contactId) },
+  //     types: [
+  //       { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+  //     ],
+  //   });
+  // });
 
   // 3. RETURN the object using the defined variables
   return {
@@ -292,13 +291,13 @@ function mapActivitiesToHubspot(
     // },
     properties: {
       hs_timestamp: start,
-      hs_email_subject: activity?.name || "Email Activity",
-      hs_email_text: activity?.details || "",
+      hs_email_subject: activity?.name,
+      hs_email_text: activity?.details,
       hs_email_direction: emailDirection,
       hs_email_status: "SENT",
       // These are the proper v3 internal names for headers
       hs_email_headers: JSON.stringify({
-        from: { email: activity?.from || customerRecord?.statementName },
+        from: { email: customerRecord?.statementEmail || activity?.from },
         to: [{ email: contact?.email || contact?.name }],
       }),
     },

@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 dotenv.config();
-import express from "express";
 import app from "./utils/app.js";
 import logger from "./config/logger.js";
 // import "./jobs/cron.job.js";
