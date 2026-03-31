@@ -410,6 +410,11 @@ async function processContacts(company, hubspotCompanyId) {
         `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
       );
 
+      // fetch customerContact
+      const customerContact = await getCRMRecordById(activity?.customerContact);
+      logger.info(
+        `Customer Contact: ${JSON.stringify(customerContact, null, 2)}`
+      );
       return; // TODO: remove
     }
   } catch (error) {
