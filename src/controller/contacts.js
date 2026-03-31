@@ -328,6 +328,7 @@ async function processContacts(company, hubspotCompanyId) {
       // }
 
       // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
+      let hubspotContactId = null;
 
       //  call the get CRM Record By Id function
       const crmRecord = await getCRMRecordById(activity.assignedToUserId);
@@ -342,7 +343,9 @@ async function processContacts(company, hubspotCompanyId) {
 
       logger.info(
         `CRM Record Contact : ${JSON.stringify(
-          (contact, null, 2)
+          contact,
+          null,
+          2
         )}: Company Record${JSON.stringify(
           customerRecord,
           null,
@@ -362,7 +365,6 @@ async function processContacts(company, hubspotCompanyId) {
 
         const orderwiseId = String(payload?.properties?.orderwiseid) || null;
         // --- USE THE NEW UPSERT FUNCTION ---
-        let hubspotContactId = null;
         hubspotContactId = await upsertContact(
           "contacts",
           "orderwiseid",

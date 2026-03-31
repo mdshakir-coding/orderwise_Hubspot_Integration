@@ -378,34 +378,79 @@ async function getCRMRecordById(id, retry = true) {
 
 //  get customer by id
 
+// async function getCustomerById(customerId, retry = true) {
+//   try {
+//     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${customerId}`;
+
+//     const response = await fetch(url, {
+//       method: "GET",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: `Bearer ${token}`, // dynamic token
+//       },
+//     });
+
+//     if (!response.ok) {
+//       if (retry) {
+//         logger.info("Token expired, retrying after login...");
+//         await login(); // your existing login function
+//         return getCustomerById(customerId, false);
+//       }
+//       // throw new Error(`Request failed: ${response.status}`);
+//     }
+
+//     const data = await response.json();
+
+//     logger.info("Customer Record:", data);
+
+//     return data;
+//   } catch (error) {
+//     logger.error("Error fetching customer:", error);
+//     return null;
+//   }
+// }
+
 async function getCustomerById(customerId, retry = true) {
   try {
     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${customerId}`;
 
-    const response = await fetch(url, {
-      method: "GET",
+    const response = await axios.get(url, {
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${token}`, // dynamic token
+        Authorization: `Bearer ${token}`, // Ensure 'token' is updated after login()
       },
+      // Optional: timeout in milliseconds
+      timeout: 10000,
     });
 
-    if (!response.ok) {
-      if (retry) {
-        logger.info("Token expired, retrying after login...");
-        await login(); // your existing login function
-        return getCustomerById(customerId, false);
-      }
-      // throw new Error(`Request failed: ${response.status}`);
-    }
+    // Axios puts the parsed JSON directly into response.data
+    const data = response.data;
 
-    const data = await response.json();
-
-    logger.info("Customer Record:", data);
-
+    logger.info(`Customer Record ${customerId} fetched successfully`);
     return data;
   } catch (error) {
-    logger.error("Error fetching customer:", error);
+    // Check if the error is a 401 (Unauthorized) to trigger the retry logic
+    if (error.response && error.response.status === 401 && retry) {
+      logger.info("Token expired or Unauthorized, retrying after login...");
+
+      await login();
+
+      // Re-run the function once with retry set to false
+      return getCustomerById(customerId, false);
+    }
+
+    // Handle 404 specifically if needed (e.g., customer doesn't exist)
+    if (error.response && error.response.status === 404) {
+      logger.warn(`Customer ${customerId} not found in Orderwise.`);
+      return null;
+    }
+
+    // Log other errors (Network issues, 500s, etc.)
+    logger.error(
+      `Error fetching customer ${customerId}:`,
+      error.response?.data || error.message
+    );
+
     return null;
   }
 }
