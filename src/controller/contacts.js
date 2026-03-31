@@ -329,9 +329,33 @@ async function processContacts(company, hubspotCompanyId) {
 
       // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
 
+      //  call the get CRM Record By Id function
+      const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+      logger.info(
+        `CRM Record for contact ${contact.id}: ${JSON.stringify(
+          crmRecord,
+          null,
+          2
+        )}`
+      );
+
+      // call the get Customer By Id function
+      const customerRecord = await getCustomerById(crmRecord.customerId);
+      logger.info(
+        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+          customerRecord,
+          null,
+          2
+        )}`
+      );
+
+      // upsert company in hubspot
+      const upsertedCompanyId = await upsertCompany(customerRecord);
+      logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
+
       const contact = await getOrwerwiseContactbyId(
-        company.id,
-        activity.customerContact
+        crmRecord.customerId,
+        crmRecord.contactId
       );
 
       if (contact) {
@@ -357,30 +381,6 @@ async function processContacts(company, hubspotCompanyId) {
           allContactsId.push(hubspotContactId);
         }
       }
-
-      //  call the get CRM Record By Id function
-      // const crmRecord = await getCRMRecordById(activity.assignedToUserId);
-      // logger.info(
-      //   `CRM Record for contact ${contact.id}: ${JSON.stringify(
-      //     crmRecord,
-      //     null,
-      //     2
-      //   )}`
-      // );
-
-      // call the get Customer By Id function
-      // const customerRecord = await getCustomerById(crmRecord.customerId);
-      // logger.info(
-      //   `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-      //     customerRecord,
-      //     null,
-      //     2
-      //   )}`
-      // );
-
-      // upsert company in hubspot
-      // const upsertedCompanyId = await upsertCompany(customerRecord);
-      // logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
 
       const activityPayload = mapActivitiesToHubspot(
         activity,
