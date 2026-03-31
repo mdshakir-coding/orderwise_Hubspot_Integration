@@ -316,9 +316,9 @@ async function processContacts(company, hubspotCompanyId) {
 
       const contact = await getCRMRecordById(activity?.customerContact);
       logger.info(
-        `Fetched contact: ${JSON.stringify(contact, null, 2)} ${
-          contact.length
-        } ${activity.customerContact} | ${company.id}`
+        `Fetched contact: ${JSON.stringify(contact, null, 2)}| ${
+          activity.customerContact
+        } | ${company.id}`
       );
 
       const payload = mapContactsToHubspot(contact, company);
