@@ -314,10 +314,7 @@ async function processContacts(company, hubspotCompanyId) {
 
       // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
 
-      const contact = await getContactsbyId(
-        company.id,
-        activity.customerContact
-      );
+      const contact = await getCRMRecordById(activity?.customerContact);
       logger.info(
         `Fetched contact: ${JSON.stringify(contact, null, 2)} ${
           contact.length
@@ -341,24 +338,24 @@ async function processContacts(company, hubspotCompanyId) {
       }
 
       //  call the get CRM Record By Id function
-      // const crmRecord = await getCRMRecordById(activity.assignedToUserId);
-      // logger.info(
-      //   `CRM Record for contact ${contact.id}: ${JSON.stringify(
-      //     crmRecord,
-      //     null,
-      //     2
-      //   )}`
-      // );
+      const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+      logger.info(
+        `CRM Record for contact ${contact.id}: ${JSON.stringify(
+          crmRecord,
+          null,
+          2
+        )}`
+      );
 
       // call the get Customer By Id function
-      // const customerRecord = await getCustomerById(crmRecord.customerId);
-      // logger.info(
-      //   `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-      //     customerRecord,
-      //     null,
-      //     2
-      //   )}`
-      // );
+      const customerRecord = await getCustomerById(crmRecord.customerId);
+      logger.info(
+        `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+          customerRecord,
+          null,
+          2
+        )}`
+      );
 
       // upsert company in hubspot
       // const upsertedCompanyId = await upsertCompany(customerRecord);
