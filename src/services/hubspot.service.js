@@ -1,4 +1,5 @@
 import logger from "../config/logger.js";
+import axios from "axios";
 
 // async function searchObjectByKey(key, value, object) {
 //   const response = await fetch(`${process.env.HUBSPOT_API_URL}/crm/v3/objects/${object}/search`, {
@@ -349,20 +350,60 @@ async function upsertHubSpotObject(
 
 // Bulk Company and contact Creation and Association Logic
 
-import axios from "axios";
+// async function createContactCompanyAssociations(associations) {
+//   const url =
+//     "https://api.hubapi.com/crm/v4/associations/contacts/companies/batch/create";
 
+//   try {
+//     const response = await axios.post(
+//       url,
+//       {
+//         inputs: associations.map((item) => ({
+//           from: { id: item.contactId },
+//           to: { id: item.companyId },
+//           type: "contact_to_company",
+//         })),
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     return response.data;
+//   } catch (error) {
+//     console.error(
+//       "Error creating associations:",
+//       error.response?.data || error.message
+//     );
+//     return null;
+//   }
+// }
 async function createContactCompanyAssociations(associations) {
   const url =
     "https://api.hubapi.com/crm/v4/associations/contacts/companies/batch/create";
 
   try {
+    // 1. Filter out duplicates from your input to avoid redundant processing
+    const uniqueAssociations = Array.from(
+      new Set(associations.map((a) => JSON.stringify(a)))
+    ).map((a) => JSON.parse(a));
+
     const response = await axios.post(
       url,
       {
-        inputs: associations.map((item) => ({
-          from: { id: item.contactId },
-          to: { id: item.companyId },
-          type: "contact_to_company",
+        inputs: uniqueAssociations.map((item) => ({
+          from: { id: String(item.contactId) },
+          to: { id: String(item.companyId) },
+          // v4 uses the 'types' array
+          types: [
+            {
+              associationCategory: "HUBSPOT_DEFINED",
+              associationTypeId: 1, // 1 is the default 'Primary' contact-to-company link
+            },
+          ],
         })),
       },
       {
@@ -382,7 +423,6 @@ async function createContactCompanyAssociations(associations) {
     return null;
   }
 }
-
 async function createHubspotEmailIfValid(activity, payload) {
   // 1. Check if the 'name' field exists and includes the word "Email"
   // const hasEmailInName =
