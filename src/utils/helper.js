@@ -269,14 +269,14 @@ function mapActivitiesToHubspot(
     },
   ];
 
-  // contactIds.forEach((contactId) => {
-  //   associations.push({
-  //     to: { id: String(contactId) },
-  //     types: [
-  //       { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
-  //     ],
-  //   });
-  // });
+  contactIds.forEach((contactId) => {
+    associations.push({
+      to: { id: String(contactId) },
+      types: [
+        { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+      ],
+    });
+  });
 
   // 3. RETURN the object using the defined variables
   return {

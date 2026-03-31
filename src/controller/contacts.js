@@ -315,51 +315,55 @@ async function processContacts(company, hubspotCompanyId) {
 
         // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
 
-        const contact = await getContactsbyId(
-          company?.id,
-          activity?.customerContact
+        const contact = contacts.find(
+          (c) => String(c.id) === String(activity?.customerContact)
         );
+
+        // const contact = await getContactsbyId(
+        //   company?.id,
+        //   activity?.customerContact
+        // );
         logger.info(
           `Fetched contact: ${JSON.stringify(contact, null, 2)}| ${
             activity.customerContact
           } | ${company.id}`
         );
 
-        const payload = mapContactsToHubspot(contact, company);
-        logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
+        // const payload = mapContactsToHubspot(contact, company);
+        // logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
-        const orderwiseId = String(payload?.properties?.orderwiseid) || null;
-        // --- USE THE NEW UPSERT FUNCTION ---
-        let hubspotContactId = null;
-        hubspotContactId = await upsertContact(
-          "contacts",
-          "orderwiseid",
-          orderwiseId,
-          payload
-        );
-        if (hubspotContactId) {
-          allContactsId.push(hubspotContactId);
-        }
+        // const orderwiseId = String(payload?.properties?.orderwiseid) || null;
+        // // --- USE THE NEW UPSERT FUNCTION ---
+        // let hubspotContactId = null;
+        // hubspotContactId = await upsertContact(
+        //   "contacts",
+        //   "orderwiseid",
+        //   orderwiseId,
+        //   payload
+        // );
+        // if (hubspotContactId) {
+        //   allContactsId.push(hubspotContactId);
+        // }
 
         //  call the get CRM Record By Id function
-        const crmRecord = await getCRMRecordById(activity.assignedToUserId);
-        logger.info(
-          `CRM Record for contact ${contact[0].id}: ${JSON.stringify(
-            crmRecord,
-            null,
-            2
-          )}`
-        );
+        // const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+        // logger.info(
+        //   `CRM Record for contact ${contact[0].id}: ${JSON.stringify(
+        //     crmRecord,
+        //     null,
+        //     2
+        //   )}`
+        // );
 
         // call the get Customer By Id function
-        const customerRecord = await getCustomerById(crmRecord.customerId);
-        logger.info(
-          `Customer Record for company ${contact.companyId}: ${JSON.stringify(
-            customerRecord,
-            null,
-            2
-          )}`
-        );
+        // const customerRecord = await getCustomerById(crmRecord.customerId);
+        // logger.info(
+        //   `Customer Record for company ${contact.companyId}: ${JSON.stringify(
+        //     customerRecord,
+        //     null,
+        //     2
+        //   )}`
+        // );
 
         // upsert company in hubspot
         // const upsertedCompanyId = await upsertCompany(customerRecord);
