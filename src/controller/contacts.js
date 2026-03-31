@@ -321,7 +321,7 @@ async function processContacts(company, hubspotCompanyId) {
         } ${activity.customerContact} | ${company.id}`
       );
 
-      const payload = mapContactsToHubspot(contact[0], company);
+      const payload = mapContactsToHubspot(contact, company);
       logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
       const orderwiseId = String(payload?.properties?.orderwiseid) || null;
