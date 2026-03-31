@@ -282,6 +282,9 @@ async function processContacts(company, hubspotCompanyId) {
 
     // 🔹 Bulk association after loop
     if (associationArr.length > 0) {
+      logger.info(
+        `Bulk association started: ${JSON.stringify(associationArr, null, 2)}`
+      );
       const result = await createContactCompanyAssociations(associationArr);
 
       logger.info(
