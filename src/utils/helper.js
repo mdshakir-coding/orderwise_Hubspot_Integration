@@ -241,7 +241,6 @@ function mapActivitiesToHubspot(
   activity,
   companyId,
   contactIds = [],
-  contact,
   customerRecord,
   upsertedCompanyId
 ) {

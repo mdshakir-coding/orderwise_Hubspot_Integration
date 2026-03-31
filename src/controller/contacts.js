@@ -373,7 +373,6 @@ async function processContacts(company, hubspotCompanyId) {
           activity,
           hubspotCompanyId,
           allContactsId, // 👈 Pass the array here
-          hubspotContactId,
           company
           // upsertedCompanyId
         );
