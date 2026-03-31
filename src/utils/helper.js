@@ -242,6 +242,7 @@ function mapActivitiesToHubspot(
   companyId,
   contactIds = [],
   customerRecord,
+  contact,
   upsertedCompanyId
 ) {
   const start = activity?.startDateTime
