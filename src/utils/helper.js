@@ -237,6 +237,75 @@ function isRecordUpToDate(payload, searchResult) {
 }
 
 // function mapActivitiesToHubspot(activity, contactId, companyId) {
+// function mapActivitiesToHubspot(
+//   activity,
+//   companyId,
+//   contactIds = [],
+//   customerRecord,
+//   contact,
+//   upsertedCompanyId
+// ) {
+//   const start = activity?.startDateTime
+//     ? new Date(activity.startDateTime).getTime()
+//     : Date.now();
+
+//   // 1. DEFINE the variables first
+//   const isIncoming = activity?.name?.toLowerCase().includes("incoming");
+//   const emailDirection = isIncoming ? "INCOMING_EMAIL" : "FORWARDED_EMAIL";
+
+//   // 2. BUILD the associations array
+//   const associations = [
+//     {
+//       to: { id: String(companyId) },
+//       types: [
+//         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
+//       ],
+//     },
+//     // {
+//     //   to: { id: String(contact) },
+//     //   types: [
+//     //     { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+//     //   ],
+//     // },
+//   ];
+
+//   contactIds.forEach((contactId) => {
+//     associations.push({
+//       to: { id: String(contactId) },
+//       types: [
+//         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+//       ],
+//     });
+//   });
+
+//   // 3. RETURN the object using the defined variables
+//   return {
+//     // properties: {
+//     //   //  type: "EMAIL",
+//     //    type: activity?.type || "EMAIL",
+//     //   hs_timestamp: start,
+//     //   hs_email_subject: activity?.name || "Email Activity",
+//     //   hs_email_text: activity?.details || "",
+//     //   hs_email_direction: emailDirection, // Now this is defined!
+//     //   hs_email_status: "SENT",
+//     // },
+//     properties: {
+//       hs_timestamp: start,
+//       hs_email_subject: activity?.name,
+//       hs_email_text: activity?.details,
+//       hs_email_direction: emailDirection,
+//       hs_email_status: "SENT",
+//       // These are the proper v3 internal names for headers
+//       hs_email_headers: JSON.stringify({
+//         from: { email: customerRecord?.statementEmail || activity?.from },
+//         to: [{ email: contact?.email || contact?.name }],
+//       }),
+//     },
+
+//     associations,
+//   };
+// }
+
 function mapActivitiesToHubspot(
   activity,
   companyId,
@@ -249,59 +318,72 @@ function mapActivitiesToHubspot(
     ? new Date(activity.startDateTime).getTime()
     : Date.now();
 
-  // 1. DEFINE the variables first
   const isIncoming = activity?.name?.toLowerCase().includes("incoming");
   const emailDirection = isIncoming ? "INCOMING_EMAIL" : "FORWARDED_EMAIL";
 
-  // 2. BUILD the associations array
-  const associations = [
-    {
+  // 1. Start with an empty array
+  const associations = [];
+
+  // 2. Add Company Association (only if companyId exists)
+  if (companyId && companyId !== "undefined") {
+    associations.push({
       to: { id: String(companyId) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 186 },
       ],
-    },
-    {
-      to: { id: String(contact) },
-      types: [
-        { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
-      ],
-    },
-  ];
+    });
+  }
 
-  contactIds.forEach((contactId) => {
+  // 3. Add the primary Contact (if it exists)
+  // Check if contact is an object (contact.id) or a direct ID string/number
+  const primaryContactId =
+    contact?.id ||
+    (typeof contact === "string" || typeof contact === "number"
+      ? contact
+      : null);
+
+  if (primaryContactId && primaryContactId !== "undefined") {
     associations.push({
-      to: { id: String(contactId) },
+      to: { id: String(primaryContactId) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
       ],
     });
-  });
+  }
 
-  // 3. RETURN the object using the defined variables
+  // 4. Add additional Contact IDs (filter out duplicates or undefined)
+  if (Array.isArray(contactIds)) {
+    contactIds.forEach((cId) => {
+      // Don't add if it's undefined or if it's already the primaryContactId
+      if (
+        cId &&
+        cId !== "undefined" &&
+        String(cId) !== String(primaryContactId)
+      ) {
+        associations.push({
+          to: { id: String(cId) },
+          types: [
+            { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
+          ],
+        });
+      }
+    });
+  }
+
   return {
-    // properties: {
-    //   //  type: "EMAIL",
-    //    type: activity?.type || "EMAIL",
-    //   hs_timestamp: start,
-    //   hs_email_subject: activity?.name || "Email Activity",
-    //   hs_email_text: activity?.details || "",
-    //   hs_email_direction: emailDirection, // Now this is defined!
-    //   hs_email_status: "SENT",
-    // },
     properties: {
       hs_timestamp: start,
-      hs_email_subject: activity?.name,
-      hs_email_text: activity?.details,
+      hs_email_subject: activity?.name || "No Subject",
+      hs_email_text: activity?.details || "",
       hs_email_direction: emailDirection,
       hs_email_status: "SENT",
-      // These are the proper v3 internal names for headers
       hs_email_headers: JSON.stringify({
-        from: { email: customerRecord?.statementEmail || activity?.from },
+        from: {
+          email: customerRecord?.statementEmail || activity?.from,
+        },
         to: [{ email: contact?.email || contact?.name }],
       }),
     },
-
     associations,
   };
 }
