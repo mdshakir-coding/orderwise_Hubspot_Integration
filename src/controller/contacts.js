@@ -280,6 +280,17 @@ async function processContacts(company, hubspotCompanyId) {
       }
     }
 
+    // 🔹 Bulk association after loop
+    if (associationArr.length > 0) {
+      const result = await createContactCompanyAssociations(associationArr);
+
+      logger.info(
+        `Bulk association completed: ${JSON.stringify(result, null, 2)}`
+      );
+    } else {
+      logger.warn("No associations to create.");
+    }
+
     // fetch All Activities for the following company Id
 
     const activities = await fetchOrderwiseActivities(company.id);
@@ -385,17 +396,6 @@ async function processContacts(company, hubspotCompanyId) {
       logger.info(
         `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
       );
-    }
-
-    // 🔹 Bulk association after loop
-    if (associationArr.length > 0) {
-      const result = await createContactCompanyAssociations(associationArr);
-
-      logger.info(
-        `Bulk association completed: ${JSON.stringify(result, null, 2)}`
-      );
-    } else {
-      logger.warn("No associations to create.");
     }
   } catch (error) {
     logger.error("Error fetching contacts:", error);
