@@ -6,6 +6,7 @@ import {
   postCompaniesToHubspot,
   postContactsToHubspot,
   getContactsbyId,
+  getOrwerwiseContactbyId,
 } from "../services/orderwise.service.js";
 
 import {
@@ -328,30 +329,33 @@ async function processContacts(company, hubspotCompanyId) {
 
       // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
 
-      const contact = await getContactsbyId(
+      const contact = await getOrwerwiseContactbyId(
         company.id,
         activity.customerContact
       );
-      logger.info(
-        `Fetched contact: ${JSON.stringify(contact, null, 2)} ${
-          contact.length
-        } ${activity.customerContact} | ${company.id}`
-      );
 
-      const payload = mapContactsToHubspot(contact[0], company);
-      logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
+      if (contact) {
+        logger.info(
+          `Fetched contact: ${JSON.stringify(contact, null, 2)} ${
+            contact.length
+          } ${activity.customerContact} | ${company.id}`
+        );
 
-      const orderwiseId = String(payload?.properties?.orderwiseid) || null;
-      // --- USE THE NEW UPSERT FUNCTION ---
-      let hubspotContactId = null;
-      hubspotContactId = await upsertContact(
-        "contacts",
-        "orderwiseid",
-        orderwiseId,
-        payload
-      );
-      if (hubspotContactId) {
-        allContactsId.push(hubspotContactId);
+        const payload = mapContactsToHubspot(contact, company);
+        logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
+
+        const orderwiseId = String(payload?.properties?.orderwiseid) || null;
+        // --- USE THE NEW UPSERT FUNCTION ---
+        let hubspotContactId = null;
+        hubspotContactId = await upsertContact(
+          "contacts",
+          "orderwiseid",
+          orderwiseId,
+          payload
+        );
+        if (hubspotContactId) {
+          allContactsId.push(hubspotContactId);
+        }
       }
 
       //  call the get CRM Record By Id function
@@ -383,7 +387,8 @@ async function processContacts(company, hubspotCompanyId) {
         hubspotCompanyId,
         allContactsId, // 👈 Pass the array here
         hubspotContactId,
-        company
+        company,
+        contact
         // upsertedCompanyId
       );
 

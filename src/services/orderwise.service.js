@@ -410,7 +410,45 @@ async function getCustomerById(customerId, retry = true) {
   }
 }
 
+async function getOrwerwiseContactbyId(companyId, contactId) {
+  try {
+    if (!token) await login();
+
+    // Use a URL object or template string to add the query parameter
+    const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?contact_id=${contactId}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      logger.error(`API Error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+
+    /**
+     * NOTE: Since the documentation says "Returns customer contact records" (plural),
+     * the API likely returns an ARRAY even if you provide a specific contact_id.
+     */
+    if (Array.isArray(data)) {
+      return data.length > 0 ? data[0] : null;
+    }
+
+    return data; // Return the object directly if it's not an array
+  } catch (error) {
+    logger.error("Error fetching contacts:", error);
+    return null;
+  }
+}
+
 export {
+  getOrwerwiseContactbyId,
   getContactsbyId,
   login,
   getCompanies,

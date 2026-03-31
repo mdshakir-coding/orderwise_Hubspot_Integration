@@ -241,9 +241,9 @@ function mapActivitiesToHubspot(
   activity,
   companyId,
   contactIds = [],
-  contact,
+  contactId,
   customerRecord,
-  upsertedCompanyId
+  contact
 ) {
   const start = activity?.startDateTime
     ? new Date(activity.startDateTime).getTime()
@@ -262,7 +262,7 @@ function mapActivitiesToHubspot(
       ],
     },
     {
-      to: { id: String(contact) },
+      to: { id: String(contactId) },
       types: [
         { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 198 },
       ],
