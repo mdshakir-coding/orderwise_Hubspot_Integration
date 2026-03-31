@@ -152,7 +152,7 @@ async function getContactsbyId(companyId, contactId) {
   try {
     if (!token) await login();
 
-    const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?limit=1000&last_id=${contactId}`;
+    const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts/${contactId}`;
 
     const response = await fetch(url, {
       method: "GET",

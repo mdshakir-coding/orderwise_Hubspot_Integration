@@ -314,14 +314,17 @@ async function processContacts(company, hubspotCompanyId) {
 
       // fetch customer contact -> upsert contact in hubspot -> name -> from/to email field
 
-      const contact = await getCRMRecordById(activity?.customerContact);
+      const contact = await getContactsbyId(
+        company?.id,
+        activity?.customerContact
+      );
       logger.info(
         `Fetched contact: ${JSON.stringify(contact, null, 2)}| ${
           activity.customerContact
         } | ${company.id}`
       );
 
-      const payload = mapContactsToHubspot(contact, company);
+      const payload = mapContactsToHubspot(contact[0], company);
       logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);
 
       const orderwiseId = String(payload?.properties?.orderwiseid) || null;
