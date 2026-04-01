@@ -342,6 +342,10 @@ async function processContacts(company, hubspotCompanyId) {
         crmRecord.customerId,
         crmRecord.contactId
       );
+      const customerContact2 = await getOrwerwiseContactbyId(
+        company?.id,
+        activity?.customerContact
+      );
 
       // call the get Customer By Id function
       const customerRecord = await getCustomerById(crmRecord?.customerId);
@@ -392,7 +396,7 @@ async function processContacts(company, hubspotCompanyId) {
         hubspotCompanyId,
         allContactsId, // 👈 Pass the array here
         hubspotContactId,
-        company,
+        customerContact2,
         contact
         // upsertedCompanyId
       );
@@ -411,9 +415,23 @@ async function processContacts(company, hubspotCompanyId) {
       );
 
       // fetch customerContact
-      const customerContact = await getCRMRecordById(activity?.customerContact);
+      const customerContact1 = await getCRMRecordById(
+        activity?.customerContact
+      );
+
       logger.info(
-        `Customer Contact: ${JSON.stringify(customerContact, null, 2)}`
+        `Customer Contact1 by ContactId: ${JSON.stringify(
+          customerContact1,
+          null,
+          2
+        )}`
+      );
+      logger.info(
+        `Customer Contact2 by ContactId and Customer Id: ${JSON.stringify(
+          customerContact2,
+          null,
+          2
+        )}`
       );
       // return; // TODO: remove
     }

@@ -350,9 +350,11 @@ function mapActivitiesToHubspot(
 
   // 4. Clean up Email Headers
   // Fallback to "noreply@domain.com" or similar if emails are missing to avoid "n/a"
-  const fromEmail =
-    customerRecord?.statementEmail || activity?.from || "unknown@orderwise.com";
-  const toEmail = contact?.email || "unknown@orderwise.com";
+  // const fromEmail =
+  //   customerRecord?.statementEmail || activity?.from || "unknown@orderwise.com";
+  // const toEmail = contact?.email || "unknown@orderwise.com";
+  const fromEmail = contact?.email;
+  const toEmail = customerRecord?.statementEmail;
 
   return {
     properties: {
