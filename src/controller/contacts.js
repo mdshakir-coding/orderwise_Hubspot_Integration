@@ -305,7 +305,9 @@ async function processContacts(company, hubspotCompanyId) {
 
     for (const activity of activities) {
       logger.info(
-        `Processing orderwise activity ${JSON.stringify(activity, null, 2)}`
+        `Processing orderwise activity index : ${activities.indexOf(
+          activity
+        )} : Record ${JSON.stringify(activity, null, 2)}`
       );
 
       // This regex looks for 'email' with an optional hyphen after the 'e'
