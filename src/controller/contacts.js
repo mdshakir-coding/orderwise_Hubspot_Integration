@@ -385,11 +385,11 @@ async function processContacts(company, hubspotCompanyId) {
         }
       }
 
-      if (customerRecord) {
-        // upsert company in hubspot
-        const upsertedCompanyId = await upsertCompany(customerRecord);
-        logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
-      }
+      // if (customerRecord) {
+      //   // upsert company in hubspot
+      //   const upsertedCompanyId = await upsertCompany(customerRecord);
+      //   logger.info(`Upserted Company ID: ${upsertedCompanyId}`);
+      // }
 
       const activityPayload = mapActivitiesToHubspot(
         activity,
@@ -449,7 +449,29 @@ async function findActivity(companies = []) {
 
       for (const activity of activities) {
         if (activity.name === "RE: Order 58688") {
-          logger.error(`Activity: ${JSON.stringify(activity, null, 2)}`);
+          logger.info(`Company: ${JSON.stringify(company, null, 2)}`);
+          logger.info(`Activity: ${JSON.stringify(activity, null, 2)}`);
+
+          const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+
+          const contact = await getOrwerwiseContactbyId(
+            crmRecord.customerId,
+            crmRecord.contactId
+          );
+          // call the get Customer By Id function
+          const customerRecord = await getCustomerById(crmRecord?.customerId);
+
+          logger.info(
+            `CRM Record Contact : ${JSON.stringify(
+              contact,
+              null,
+              2
+            )}: Company Record${JSON.stringify(
+              customerRecord,
+              null,
+              2
+            )} |CRM Record | ${JSON.stringify(crmRecord, null, 2)}`
+          );
         } else {
           logger.debug(`Activity: ${JSON.stringify(activity, null, 2)}`);
         }

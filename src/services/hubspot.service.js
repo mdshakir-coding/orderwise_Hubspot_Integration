@@ -1,5 +1,6 @@
 import logger from "../config/logger.js";
 import axios from "axios";
+import { hubspotExecutor, orderwiseExecutor } from "../utils/executors.js";
 
 // async function searchObjectByKey(key, value, object) {
 //   const response = await fetch(`${process.env.HUBSPOT_API_URL}/crm/v3/objects/${object}/search`, {
@@ -25,6 +26,53 @@ import axios from "axios";
 //   return data.results.length > 0 ? data.results[0].id : null;
 // }
 
+// async function searchObjectByKey(object, key, value, properties) {
+//   if (!object || !key || !value) {
+//     logger.error(
+//       `Missing search parameters → object:${object}, key:${key}, value:${value}`
+//     );
+//     return null;
+//   }
+
+//   const apiUrl = `${process.env.HUBSPOT_API_URL}/${object}/search`;
+
+//   try {
+//     const response = await fetch(apiUrl, {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         filterGroups: [
+//           {
+//             filters: [
+//               {
+//                 propertyName: key,
+//                 operator: "EQ",
+//                 value: value,
+//               },
+//             ],
+//           },
+//         ],
+//         properties,
+//       }),
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error("HubSpot Search Error:", errorText);
+//       throw new Error(`Search failed: ${response.status}`);
+//     }
+
+//     const data = await response.json();
+//     return data.results?.length > 0 ? data.results[0] : null;
+//   } catch (error) {
+//     logger.error("Error in searchObjectByKey:", error.message);
+//     return null;
+//   }
+// }
+
 async function searchObjectByKey(object, key, value, properties) {
   if (!object || !key || !value) {
     logger.error(
@@ -36,42 +84,52 @@ async function searchObjectByKey(object, key, value, properties) {
   const apiUrl = `${process.env.HUBSPOT_API_URL}/${object}/search`;
 
   try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        filterGroups: [
+    const response = await hubspotExecutor(
+      () => {
+        return axios.post(
+          apiUrl,
           {
-            filters: [
+            filterGroups: [
               {
-                propertyName: key,
-                operator: "EQ",
-                value: value,
+                filters: [
+                  {
+                    propertyName: key,
+                    operator: "EQ",
+                    value: value,
+                  },
+                ],
               },
             ],
+            properties,
           },
-        ],
-        properties,
-      }),
-    });
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      },
+      { name: "searchObjectByKey" }
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("HubSpot Search Error:", errorText);
-      throw new Error(`Search failed: ${response.status}`);
-    }
-
-    const data = await response.json();
+    // Axios stores the parsed JSON response in the 'data' property
+    const data = response.data;
     return data.results?.length > 0 ? data.results[0] : null;
   } catch (error) {
-    logger.error("Error in searchObjectByKey:", error.message);
+    // Axios provides the error response details in error.response
+    if (error.response) {
+      logger.error(
+        `HubSpot Search Error: ${error.response.status} - ${JSON.stringify(
+          error.response.data
+        )}`
+      );
+    } else {
+      logger.error("Error in searchObjectByKey:", error.message);
+    }
     return null;
   }
 }
-
 // async function createObject(object, payload) {
 //   const response = await fetch(`${process.env.HUBSPOT_API_URL}/crm/v3/objects/${object}`, {
 //     method: "POST",
@@ -110,80 +168,80 @@ async function searchObjectByKey(object, key, value, properties) {
 //   return data;
 // }
 
-async function createObject(object, payload) {
-  try {
-    const response = await fetch(`${process.env.HUBSPOT_API_URL}/${object}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-      },
-      body: JSON.stringify(payload),
-    });
+// async function createObject(object, payload) {
+//   try {
+//     const response = await fetch(`${process.env.HUBSPOT_API_URL}/${object}`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+//       },
+//       body: JSON.stringify(payload),
+//     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.error(
-        `Failed to create ${object}: ${response.status} - ${errorText}`
-      );
-      return null; // Return null on failure
-    }
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       logger.error(
+//         `Failed to create ${object}: ${response.status} - ${errorText}`
+//       );
+//       return null; // Return null on failure
+//     }
 
-    const data = await response.json();
-    // logger.info(`${object} created: ${data.id}`);
-    return data;
-  } catch (error) {
-    logger.error(`Error creating ${object}:`, error.message);
-    return null; // Return null if exception occurs
-  }
-}
+//     const data = await response.json();
+//     // logger.info(`${object} created: ${data.id}`);
+//     return data;
+//   } catch (error) {
+//     logger.error(`Error creating ${object}:`, error.message);
+//     return null; // Return null if exception occurs
+//   }
+// }
 
-async function updateObject(object, id, payload) {
-  try {
-    const response = await fetch(
-      `${process.env.HUBSPOT_API_URL}/${object}/${id}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+// async function updateObject(object, id, payload) {
+//   try {
+//     const response = await fetch(
+//       `${process.env.HUBSPOT_API_URL}/${object}/${id}`,
+//       {
+//         method: "PATCH",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+//         },
+//         body: JSON.stringify(payload),
+//       }
+//     );
 
-    // if (!response.ok) {
-    //   const errorText = await response.text();
-    //   logger.error(
-    //     `Failed to update ${object} with ID ${id}: ${response.status} - ${errorText}`
-    //   );
-    //   return null; // return null if update failed
-    // }
-    const data = await response.json();
-    // logger.info(`${object} updated successfully: ${JSON.stringify(data,null,2)}`);
-    return data;
-  } catch (error) {
-    logger.error(`Error updating ${object} with ID ${id}:`, error);
-    return null; // return null on exception
-  }
-}
+//     // if (!response.ok) {
+//     //   const errorText = await response.text();
+//     //   logger.error(
+//     //     `Failed to update ${object} with ID ${id}: ${response.status} - ${errorText}`
+//     //   );
+//     //   return null; // return null if update failed
+//     // }
+//     const data = await response.json();
+//     // logger.info(`${object} updated successfully: ${JSON.stringify(data,null,2)}`);
+//     return data;
+//   } catch (error) {
+//     logger.error(`Error updating ${object} with ID ${id}:`, error);
+//     return null; // return null on exception
+//   }
+// }
 
-async function associateContactToCompany(companyId, contactId) {
-  const url = `https://api.hubapi.com/crm/v4/objects/companies/${companyId}/associations/default/contact/${contactId}`;
+// async function associateContactToCompany(companyId, contactId) {
+//   const url = `https://api.hubapi.com/crm/v4/objects/companies/${companyId}/associations/default/contact/${contactId}`;
 
-  const response = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-    },
-  });
+//   const response = await fetch(url, {
+//     method: "PUT",
+//     headers: {
+//       Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+//     },
+//   });
 
-  if (!response.ok) {
-    throw new Error(`Association failed: ${response.status}`);
-  }
+//   if (!response.ok) {
+//     throw new Error(`Association failed: ${response.status}`);
+//   }
 
-  logger.info(`Contact ${contactId} associated with company ${companyId}`);
-}
+//   logger.info(`Contact ${contactId} associated with company ${companyId}`);
+// }
 
 // create a upsert function
 
@@ -223,6 +281,93 @@ async function associateContactToCompany(companyId, contactId) {
 // }
 
 // new upsert function with improved error handling and logging
+
+async function createObject(object, payload) {
+  try {
+    const response = await hubspotExecutor(
+      () => {
+        return axios.post(
+          `${process.env.HUBSPOT_API_URL}/${object}`,
+          payload, // Axios handles JSON.stringify automatically
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      },
+      { name: `createObject-${object}-payload ${JSON.stringify(payload)}` }
+    );
+
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response
+      ? `${error.response.status} - ${JSON.stringify(error.response.data)}`
+      : error.message;
+
+    logger.error(`Failed to create ${object}: ${errorMsg}`);
+    return null;
+  }
+}
+
+async function updateObject(object, id, payload) {
+  try {
+    const response = await hubspotExecutor(
+      () => {
+        return axios.patch(
+          `${process.env.HUBSPOT_API_URL}/${object}/${id}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      },
+      {
+        name: `updateObject-${object}-id ${id} - payload ${JSON.stringify(
+          payload
+        )}`,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response
+      ? `${error.response.status} - ${JSON.stringify(error.response.data)}`
+      : error.message;
+
+    logger.error(`Error updating ${object} with ID ${id}: ${errorMsg}`);
+    return null;
+  }
+}
+
+async function associateContactToCompany(companyId, contactId) {
+  const url = `https://api.hubapi.com/crm/v4/objects/companies/${companyId}/associations/default/contact/${contactId}`;
+
+  try {
+    const response = await hubspotExecutor(() => {
+      return axios.put(
+        url,
+        null, // PUT requests usually require a body argument, even if empty
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+          },
+        }
+      );
+    });
+
+    logger.info(`Contact ${contactId} associated with company ${companyId}`);
+
+    return response.data;
+  } catch (error) {
+    const errorStatus = error.response?.status || "Unknown";
+    throw new Error(`Association failed: ${errorStatus}`);
+  }
+}
 async function upsertHubSpotObject(
   objectType,
   searchKey,
@@ -391,27 +536,32 @@ async function createContactCompanyAssociations(associations) {
       new Set(associations.map((a) => JSON.stringify(a)))
     ).map((a) => JSON.parse(a));
 
-    const response = await axios.post(
-      url,
-      {
-        inputs: uniqueAssociations.map((item) => ({
-          from: { id: String(item.contactId) },
-          to: { id: String(item.companyId) },
-          // v4 uses the 'types' array
-          types: [
-            {
-              associationCategory: "HUBSPOT_DEFINED",
-              associationTypeId: 1, // 1 is the default 'Primary' contact-to-company link
+    const response = await hubspotExecutor(
+      () => {
+        return axios.post(
+          url,
+          {
+            inputs: uniqueAssociations.map((item) => ({
+              from: { id: String(item.contactId) },
+              to: { id: String(item.companyId) },
+              // v4 uses the 'types' array
+              types: [
+                {
+                  associationCategory: "HUBSPOT_DEFINED",
+                  associationTypeId: 1, // 1 is the default 'Primary' contact-to-company link
+                },
+              ],
+            })),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
             },
-          ],
-        })),
+          }
+        );
       },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
+      { name: "createContactCompanyAssociations" }
     );
 
     return response.data;

@@ -3,6 +3,7 @@ import { getLastId, setLastId } from "../utils/lastRun.js";
 import logger from "../config/logger.js";
 import { ProcessCompanies, findActivity } from "../controller/contacts.js";
 import axios from "axios";
+import { orderwiseExecutor } from "../utils/executors.js";
 
 let token = null;
 let companies = [];
@@ -105,12 +106,17 @@ async function getCompanies(retry = true) {
 
       let response;
       try {
-        response = await axios.get(url, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`, // Ensure 'token' is accessible in this scope
+        response = await orderwiseExecutor(
+          () => {
+            return axios.get(url, {
+              headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`, // Ensure 'token' is accessible in this scope
+              },
+            });
           },
-        });
+          { name: "Orderwise getCompanies" }
+        );
       } catch (err) {
         // Axios throws for status codes outside 2xx (e.g., 401 Unauthorized)
         if (retry) {
@@ -156,114 +162,199 @@ async function getCompanies(retry = true) {
 
 // fetch contacts
 // logger.info(`Contacts Count: ${contacts.length}`);
+// async function getContacts(companyId) {
+//   try {
+//     if (!token) await login();
+//     // if (!companies || companies.length === 0) return [];
+
+//     let allContacts = [];
+
+//     // for (const company of companies) {
+//     // 1. lastId must be reset to 0 for every NEW company
+//     let lastId = 0;
+//     let hasMore = true;
+
+//     while (hasMore) {
+//       // 2. Add last_id to the URL query parameters
+//       const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?limit=1000&last_id=${lastId}`;
+
+//       const response = await fetch(url, {
+//         method: "GET",
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//       });
+
+//       if (!response.ok) {
+//         logger.warn(`Failed contacts for company ${companyId}`);
+//         break; // Move to next company
+//       }
+
+//       const data = await response.json();
+
+//       if (!data || data.length === 0) break;
+
+//       allContacts.push(...data);
+//       // allContacts.push(
+//       //   ...data.map((contact) => ({
+//       //     ...contact,
+//       //     companyId,
+//       //   }))
+//       // );
+//       // return allContacts; //todo remove after testing
+//       // 3. Update lastId to the ID of the last contact in the current batch
+//       lastId = data[data.length - 1].id;
+
+//       logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
+
+//       // 4. If we got fewer than 1000, no more pages exist
+//       if (data.length < 1000) hasMore = false;
+//     }
+//     // }
+//     return allContacts;
+//   } catch (error) {
+//     logger.error("Error fetching contacts:", error);
+//     return [];
+//   }
+// }
+// async function getContactsbyId(companyId, contactId) {
+//   try {
+//     if (!token) await login();
+
+//     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?limit=1000&last_id=${contactId}`;
+
+//     const response = await fetch(url, {
+//       method: "GET",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: `Bearer ${token}`,
+//       },
+//     });
+
+//     const data = await response.json();
+
+//     // logger.info(
+//     //   `Fetched contact  ${JSON.stringify(
+//     //     data,
+//     //     null,
+//     //     2
+//     //   )} for company ${companyId}`
+//     // );
+
+//     return data;
+
+//     // if (!data || data.length === 0) break;
+
+//     //   allContacts.push(...data);
+//     //   // allContacts.push(
+//     //   //   ...data.map((contact) => ({
+//     //   //     ...contact,
+//     //   //     companyId,
+//     //   //   }))
+//     //   // );
+//     //   // return allContacts; //todo remove after testing
+//     //   // 3. Update lastId to the ID of the last contact in the current batch
+//     //   lastId = data[data.length - 1].id;
+
+//     //   logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
+
+//     //   // 4. If we got fewer than 1000, no more pages exist
+//     //   if (data.length < 1000) hasMore = false;
+//     // }
+//     // // }
+//     // return allContacts;
+//   } catch (error) {
+//     logger.error("Error fetching contacts:", error);
+//     return [];
+//   }
+// }
+
 async function getContacts(companyId) {
   try {
     if (!token) await login();
-    // if (!companies || companies.length === 0) return [];
 
     let allContacts = [];
-
-    // for (const company of companies) {
-    // 1. lastId must be reset to 0 for every NEW company
     let lastId = 0;
     let hasMore = true;
 
     while (hasMore) {
-      // 2. Add last_id to the URL query parameters
       const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?limit=1000&last_id=${lastId}`;
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      try {
+        const response = await orderwiseExecutor(
+          () => {
+            return axios.get(url, {
+              headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            });
+          },
+          { name: "Orderwise getContacts" }
+        );
 
-      if (!response.ok) {
-        logger.warn(`Failed contacts for company ${companyId}`);
-        break; // Move to next company
+        // Axios automatically parses JSON into response.data
+        const data = response.data;
+
+        if (!data || data.length === 0) break;
+
+        allContacts.push(...data);
+
+        // Update lastId for the next pagination batch
+        lastId = data[data.length - 1].id;
+
+        logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
+
+        // If we got fewer than 1000, no more pages exist
+        if (data.length < 1000) hasMore = false;
+      } catch (err) {
+        // Axios throws for non-2xx statuses (like 401, 404, etc.)
+        logger.warn(`Failed contacts for company ${companyId}: ${err.message}`);
+        break; // Exit the loop for this company
       }
-
-      const data = await response.json();
-
-      if (!data || data.length === 0) break;
-
-      allContacts.push(...data);
-      // allContacts.push(
-      //   ...data.map((contact) => ({
-      //     ...contact,
-      //     companyId,
-      //   }))
-      // );
-      // return allContacts; //todo remove after testing
-      // 3. Update lastId to the ID of the last contact in the current batch
-      lastId = data[data.length - 1].id;
-
-      logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
-
-      // 4. If we got fewer than 1000, no more pages exist
-      if (data.length < 1000) hasMore = false;
     }
-    // }
     return allContacts;
   } catch (error) {
-    logger.error("Error fetching contacts:", error);
+    logger.error("Error in getContacts wrapper:", error.message);
     return [];
   }
 }
+
 async function getContactsbyId(companyId, contactId) {
   try {
     if (!token) await login();
 
     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?limit=1000&last_id=${contactId}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
+    const response = await orderwiseExecutor(
+      () => {
+        return axios.get(url, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
       },
-    });
+      { name: "Orderwise getContactsbyId" }
+    );
 
-    const data = await response.json();
-
-    // logger.info(
-    //   `Fetched contact  ${JSON.stringify(
-    //     data,
-    //     null,
-    //     2
-    //   )} for company ${companyId}`
-    // );
-
-    return data;
-
-    // if (!data || data.length === 0) break;
-
-    //   allContacts.push(...data);
-    //   // allContacts.push(
-    //   //   ...data.map((contact) => ({
-    //   //     ...contact,
-    //   //     companyId,
-    //   //   }))
-    //   // );
-    //   // return allContacts; //todo remove after testing
-    //   // 3. Update lastId to the ID of the last contact in the current batch
-    //   lastId = data[data.length - 1].id;
-
-    //   logger.info(`Fetched batch of ${data.length} for company ${companyId}`);
-
-    //   // 4. If we got fewer than 1000, no more pages exist
-    //   if (data.length < 1000) hasMore = false;
-    // }
-    // // }
-    // return allContacts;
+    // Directly return the parsed data
+    return response.data;
   } catch (error) {
-    logger.error("Error fetching contacts:", error);
+    const errorMsg = error.response
+      ? `Status: ${error.response.status} - ${JSON.stringify(
+          error.response.data
+        )}`
+      : error.message;
+
+    logger.error(
+      `Error fetching contact by ID for company ${companyId}:`,
+      errorMsg
+    );
     return [];
   }
 }
-
 /** Post companies to HubSpot */
 async function postCompaniesToHubspot(
   searchObjectByKey,
@@ -324,15 +415,20 @@ async function fetchOrderwiseActivities(companyId) {
   try {
     const url = `http://sslvpn.caretrade.co/OWAPI/crm/${companyId}/activities`;
 
-    const response = await axios.get(url, {
-      params: {
-        include_completed: true,
-        include_analysis: true,
+    const response = await orderwiseExecutor(
+      () => {
+        return axios.get(url, {
+          params: {
+            include_completed: true,
+            include_analysis: true,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
       },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      { name: "Orderwise fetchOrderwiseActivities" }
+    );
 
     return response.data;
   } catch (error) {
@@ -443,14 +539,19 @@ async function getCRMRecordById(id, retry = true) {
   const url = `http://sslvpn.caretrade.co/OWAPI/crm/${id}`;
 
   try {
-    const response = await axios.get(url, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`, // Ensure 'token' is accessible here
+    const response = await orderwiseExecutor(
+      () => {
+        return axios.get(url, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`, // Ensure 'token' is accessible here
+          },
+          // Axios timeout is helpful for VPN-based APIs
+          timeout: 10000,
+        });
       },
-      // Axios timeout is helpful for VPN-based APIs
-      timeout: 10000,
-    });
+      { name: "Orderwise getCRMRecordById" }
+    );
 
     // Axios automatically parses JSON.
     // We just need to check if the data actually exists.
@@ -531,14 +632,19 @@ async function getCustomerById(customerId, retry = true) {
   try {
     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${customerId}`;
 
-    const response = await axios.get(url, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`, // Ensure 'token' is updated after login()
+    const response = await orderwiseExecutor(
+      () => {
+        return axios.get(url, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`, // Ensure 'token' is updated after login()
+          },
+          // Optional: timeout in milliseconds
+          timeout: 10000,
+        });
       },
-      // Optional: timeout in milliseconds
-      timeout: 10000,
-    });
+      { name: "Orderwise getCustomerById" }
+    );
 
     // Axios puts the parsed JSON directly into response.data
     const data = response.data;
@@ -576,35 +682,40 @@ async function getOrwerwiseContactbyId(companyId, contactId) {
   try {
     if (!token) await login();
 
-    // Use a URL object or template string to add the query parameter
     const url = `http://sslvpn.caretrade.co/OWAPI/customers/${companyId}/customer-contacts?contact_id=${contactId}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
+    const response = await orderwiseExecutor(
+      () => {
+        return axios.get(url, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
       },
-    });
+      { name: "Orderwise getOrwerwiseContactbyId" }
+    );
 
-    if (!response.ok) {
-      logger.error(`API Error: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
+    // Axios automatically parses JSON into response.data
+    const data = response.data;
 
     /**
-     * NOTE: Since the documentation says "Returns customer contact records" (plural),
-     * the API likely returns an ARRAY even if you provide a specific contact_id.
+     * Logic remains the same: handle the case where the API returns
+     * an array for a specific ID search.
      */
     if (Array.isArray(data)) {
       return data.length > 0 ? data[0] : null;
     }
 
-    return data; // Return the object directly if it's not an array
+    return data;
   } catch (error) {
-    logger.error("Error fetching contacts:", error);
+    // Axios places the status code in error.response.status
+    if (error.response) {
+      logger.error(`API Error: ${error.response.status}`);
+    } else {
+      logger.error("Error fetching contacts:", error.message);
+    }
+
     return null;
   }
 }
