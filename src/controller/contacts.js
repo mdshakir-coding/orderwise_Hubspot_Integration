@@ -307,7 +307,7 @@ async function processContacts(company, hubspotCompanyId) {
 
     for (const activity of activities) {
       logger.info(
-        `Processing orderwise activity index : ${activities.indexOf(
+        `Processing orderwise activity at index : ${activities.indexOf(
           activity
         )} : Record ${JSON.stringify(activity, null, 2)}`
       );
@@ -338,7 +338,9 @@ async function processContacts(company, hubspotCompanyId) {
       const crmRecord = await getCRMRecordById(activity.assignedToUserId);
 
       if (!crmRecord) {
-        logger.info(`CRM Record ${activity.assignedToUserId} not found.`);
+        logger.info(
+          `CRM Record assignedToUserId->${activity.assignedToUserId} not found.`
+        );
         continue;
       }
 
@@ -391,10 +393,8 @@ async function processContacts(company, hubspotCompanyId) {
         `Customer Contact Id ${
           activity?.customerContact
         }: Record ${JSON.stringify(
-          customerContact,
-          null,
-          2
-        )} | Contact Record: ${JSON.stringify(toContact, null, 2)}`
+          customerContact
+        )} | Contact Record: ${JSON.stringify(toContact)}`
       );
 
       // const customerContact2 = await getOrwerwiseContactbyId(
@@ -407,14 +407,10 @@ async function processContacts(company, hubspotCompanyId) {
 
       logger.info(
         `CRM Record Contact : ${JSON.stringify(
-          contact,
-          null,
-          2
+          contact
         )}: Company Record${JSON.stringify(
-          customerRecord,
-          null,
-          2
-        )} |CRM Record | ${JSON.stringify(crmRecord, null, 2)}`
+          customerRecord
+        )} |CRM Record | ${JSON.stringify(crmRecord)}`
       );
 
       // if (customerRecord) {
@@ -434,7 +430,7 @@ async function processContacts(company, hubspotCompanyId) {
       );
 
       logger.info(
-        `Mapped activity payload: ${JSON.stringify(activityPayload, null, 2)}`
+        `Mapped activity payload: ${JSON.stringify(activityPayload)}`
       );
 
       // call the email function with validation
@@ -442,9 +438,7 @@ async function processContacts(company, hubspotCompanyId) {
         activity,
         activityPayload
       );
-      logger.info(
-        `Email creation result: ${JSON.stringify(emailResult, null, 2)}`
-      );
+      logger.info(`Email creation result: ${JSON.stringify(emailResult)}`);
 
       // logger.info(
       //   `Customer Contact2 by ContactId and Customer Id: ${JSON.stringify(
