@@ -1,7 +1,8 @@
 import { getLastId, setLastId } from "../utils/lastRun.js";
 // import fetch from "node-fetch"; // if using Node.js
 import logger from "../config/logger.js";
-import { syncContacts } from "../controller/contacts.js";
+import { ProcessCompanies, findActivity } from "../controller/contacts.js";
+import axios from "axios";
 
 let token = null;
 let companies = [];
@@ -32,60 +33,123 @@ async function login() {
 
 // fetch companies
 
+// async function getCompanies(retry = true) {
+//   // orderwised login
+//   // logger.info("Orderwise login successful");
+//   try {
+//     await login();
+
+//     let allCustomers = [];
+//     let lastId = 0;
+//     // let lastId = getLastId() || 0;
+
+//     let hasMore = true;
+
+//     while (hasMore) {
+//       const url = `http://sslvpn.caretrade.co/OWAPI/customers?limit=1000&last_id=${lastId}`;
+
+//       const response = await fetch(url, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//       });
+
+//       if (!response.ok) {
+//         if (retry) {
+//           logger.info("Refreshing token and retrying...");
+//           await login();
+//           return getCompanies(false);
+//         }
+//         throw new Error(`Failed: ${response.status}`);
+//       }
+
+//       const data = await response.json();
+
+//       if (!data || data.length === 0) break;
+
+//       // allCustomers.push(...data);
+
+//       try {
+//         // await ProcessCompanies(data);
+//         await findActivity(data);
+//       } catch (error) {
+//         logger.error("Error syncing contacts:", error);
+//       }
+
+//       // Process the records here (e.g., save to DB) before updating lastId
+
+//       lastId = data[data.length - 1].id;
+//       // setLastId(lastId); // Save lastId after each successful fetch
+
+//       logger.info(`Fetched batch. Total: ${data.length}`);
+//     }
+
+//     // return allCustomers || [];
+//   } catch (error) {
+//     logger.error("Error fetching Orderwise customers:", error);
+//     return [];
+//   }
+// }
+
 async function getCompanies(retry = true) {
-  // orderwised login
-  // logger.info("Orderwise login successful");
   try {
+    // Initial login to ensure token is valid
     await login();
 
-    let allCustomers = [];
     let lastId = 0;
-    // let lastId = getLastId() || 0;
-
     let hasMore = true;
 
     while (hasMore) {
       const url = `http://sslvpn.caretrade.co/OWAPI/customers?limit=1000&last_id=${lastId}`;
 
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
+      let response;
+      try {
+        response = await axios.get(url, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`, // Ensure 'token' is accessible in this scope
+          },
+        });
+      } catch (err) {
+        // Axios throws for status codes outside 2xx (e.g., 401 Unauthorized)
         if (retry) {
           logger.info("Refreshing token and retrying...");
           await login();
-          return getCompanies(false);
+          return getCompanies(false); // One-time retry
         }
-        throw new Error(`Failed: ${response.status}`);
+        throw err;
       }
 
-      const data = await response.json();
+      // Axios automatically parses JSON into 'response.data'
+      const data = response.data;
 
-      if (!data || data.length === 0) break;
-
-      // allCustomers.push(...data);
+      if (!data || data.length === 0) {
+        hasMore = false;
+        break;
+      }
 
       try {
-        await syncContacts(data);
+        // await ProcessCompanies(data);
+        await findActivity(data);
       } catch (error) {
         logger.error("Error syncing contacts:", error);
       }
 
-      // Process the records here (e.g., save to DB) before updating lastId
-
+      // Update lastId for the next pagination batch
       lastId = data[data.length - 1].id;
-      // setLastId(lastId); // Save lastId after each successful fetch
 
       logger.info(`Fetched batch. Total: ${data.length}`);
     }
-
-    // return allCustomers || [];
   } catch (error) {
-    logger.error("Error fetching Orderwise customers:", error);
+    // Axios errors have a helpful 'response' object
+    const errorMessage = error.response
+      ? `Status: ${error.response.status} - ${JSON.stringify(
+          error.response.data
+        )}`
+      : error.message;
+
+    logger.error("Error fetching Orderwise customers:", errorMessage);
     return [];
   }
 }
@@ -256,7 +320,6 @@ async function postContactsToHubspot(
   }
 }
 // fetch activities
-import axios from "axios";
 async function fetchOrderwiseActivities(companyId) {
   try {
     const url = `http://sslvpn.caretrade.co/OWAPI/crm/${companyId}/activities`;

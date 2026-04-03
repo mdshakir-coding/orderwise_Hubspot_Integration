@@ -110,7 +110,7 @@ async function upsertCompany(company) {
 }
 
 // This function is used to sync companies from Orderwise to HubSpot and then sync the associated contacts and activities for each company. It iterates through the list of companies, upserts each company in HubSpot, and then processes the contacts and activities related to that company. The function also includes error handling to log any issues that occur during the sync process.
-async function syncContacts(companies = []) {
+async function ProcessCompanies(companies = []) {
   try {
     for (const company of companies) {
       try {
@@ -440,7 +440,27 @@ async function processContacts(company, hubspotCompanyId) {
   }
 }
 
-export { syncContacts };
+async function findActivity(companies = []) {
+  try {
+    for (const company of companies) {
+      // fetch All Activities for the following company Id
+      const activities = await fetchOrderwiseActivities(company.id);
+      logger.info(`Activity Length: ${JSON.stringify(activities.length)}`);
+
+      for (const activity of activities) {
+        if (activity.name === "RE: Order 58688") {
+          logger.error(`Activity: ${JSON.stringify(activity, null, 2)}`);
+        } else {
+          logger.debug(`Activity: ${JSON.stringify(activity, null, 2)}`);
+        }
+      }
+    }
+  } catch (error) {
+    logger.error("Error fetching contacts:", error);
+  }
+}
+
+export { ProcessCompanies, findActivity };
 
 /**
  * 
