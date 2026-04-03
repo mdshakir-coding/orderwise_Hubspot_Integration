@@ -475,7 +475,13 @@ async function findActivity(companies = []) {
             )} |CRM Record | ${JSON.stringify(crmRecord, null, 2)}`
           );
         } else {
-          logger.debug(`Activity: ${JSON.stringify(activity, null, 2)}`);
+          logger.debug(
+            `Company Id ${company.id} | Activity: ${JSON.stringify(
+              activity,
+              null,
+              2
+            )}`
+          );
         }
       }
     }
