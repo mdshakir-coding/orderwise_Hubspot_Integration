@@ -342,10 +342,14 @@ async function processContacts(company, hubspotCompanyId) {
         continue;
       }
 
-      const contact = await getOrwerwiseContactbyId(
-        crmRecord.customerId,
-        crmRecord.contactId
-      );
+      let contact = null;
+
+      if (crmRecord) {
+        contact = await getOrwerwiseContactbyId(
+          crmRecord.customerId,
+          crmRecord.contactId
+        );
+      }
 
       if (contact) {
         logger.info(
@@ -374,10 +378,14 @@ async function processContacts(company, hubspotCompanyId) {
       const customerContact = await getCRMRecordById(activity?.customerContact);
 
       // find to contact
-      const toContact = await getOrwerwiseContactbyId(
-        customerContact.customerId,
-        customerContact.contactId
-      );
+      let toContact = null;
+
+      if (customerContact) {
+        toContact = await getOrwerwiseContactbyId(
+          customerContact.customerId,
+          customerContact.contactId
+        );
+      }
 
       logger.info(
         `Customer Contact Id ${
