@@ -446,42 +446,53 @@ async function findActivity(companies = []) {
   try {
     for (const company of companies) {
       // fetch All Activities for the following company Id
-      const activities = await fetchOrderwiseActivities(company.id);
-      logger.info(`Activity Length: ${JSON.stringify(activities.length)}`);
 
-      for (const activity of activities) {
-        if (activity.name === "RE: Order 58688") {
-          logger.info(`Company: ${JSON.stringify(company, null, 2)}`);
-          logger.info(`Activity: ${JSON.stringify(activity, null, 2)}`);
+      // find contact
 
-          const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+      const contacts = await getContacts(company?.id);
+      logger.info(`Contacts Fetched ${contacts.length} contacts`);
 
-          const contact = await getOrwerwiseContactbyId(
-            crmRecord.customerId,
-            crmRecord.contactId
-          );
-          // call the get Customer By Id function
-          const customerRecord = await getCustomerById(crmRecord?.customerId);
+      for (const contact of contacts) {
+        logger.info(
+          `Contact: ${JSON.stringify(contact, null, 2)} | ${company.id}`
+        );
 
-          logger.info(
-            `CRM Record Contact : ${JSON.stringify(
-              contact,
-              null,
-              2
-            )}: Company Record${JSON.stringify(
-              customerRecord,
-              null,
-              2
-            )} |CRM Record | ${JSON.stringify(crmRecord, null, 2)}`
-          );
-        } else {
-          logger.debug(
-            `Company Id ${company.id} | Activity: ${JSON.stringify(
-              activity,
-              null,
-              2
-            )}`
-          );
+        const activities = await fetchOrderwiseActivities(contact.id);
+        logger.info(`Activity Length: ${JSON.stringify(activities.length)}`);
+
+        for (const activity of activities) {
+          if (activity.name === "RE: Order 58688") {
+            logger.info(`Activity: ${JSON.stringify(activity, null, 2)}`);
+
+            const crmRecord = await getCRMRecordById(activity.assignedToUserId);
+
+            const contact = await getOrwerwiseContactbyId(
+              crmRecord.customerId,
+              crmRecord.contactId
+            );
+            // call the get Customer By Id function
+            const customerRecord = await getCustomerById(crmRecord?.customerId);
+
+            logger.info(
+              `CRM Record Contact : ${JSON.stringify(
+                contact,
+                null,
+                2
+              )}: Company Record${JSON.stringify(
+                customerRecord,
+                null,
+                2
+              )} |CRM Record | ${JSON.stringify(crmRecord, null, 2)}`
+            );
+          } else {
+            logger.debug(
+              `Company Id ${contact.id} | Activity: ${JSON.stringify(
+                activity,
+                null,
+                2
+              )}`
+            );
+          }
         }
       }
     }
