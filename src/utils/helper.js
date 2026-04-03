@@ -354,7 +354,7 @@ function mapActivitiesToHubspot(
   //   customerRecord?.statementEmail || activity?.from || "unknown@orderwise.com";
   // const toEmail = contact?.email || "unknown@orderwise.com";
   const fromEmail = contact?.email;
-  const toEmail = customerRecord?.statementEmail;
+  const toEmail = customerRecord?.email;
 
   return {
     properties: {

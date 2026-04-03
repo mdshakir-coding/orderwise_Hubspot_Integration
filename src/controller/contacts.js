@@ -194,7 +194,7 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
       );
     }
 
-    logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
+    // logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);
 
     const hubspotId = searchResult?.id;
 
@@ -247,7 +247,9 @@ async function processContacts(company, hubspotCompanyId) {
     for (const contact of contacts) {
       try {
         logger.info(
-          `Processing orderwise contact ${JSON.stringify(contact, null, 2)}`
+          `Processing orderwise contact at index ${contacts.indexOf(
+            contact
+          )}: ${JSON.stringify(contact, null, 2)}`
         );
         // Contact Payload Mapping
         const payload = mapContactsToHubspot(contact, company);
@@ -387,10 +389,10 @@ async function processContacts(company, hubspotCompanyId) {
         )} | Contact Record: ${JSON.stringify(toContact, null, 2)}`
       );
 
-      const customerContact2 = await getOrwerwiseContactbyId(
-        company?.id,
-        activity?.customerContact
-      );
+      // const customerContact2 = await getOrwerwiseContactbyId(
+      //   company?.id,
+      //   activity?.customerContact
+      // );
 
       // call the get Customer By Id function
       const customerRecord = await getCustomerById(crmRecord?.customerId);
