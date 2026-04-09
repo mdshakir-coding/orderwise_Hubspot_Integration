@@ -9,7 +9,7 @@ const hubspotExecutor = createRequestExecutor({
 
 const orderwiseExecutor = createRequestExecutor({
   name: "orderwise",
-  rateLimit: 5,
+  rateLimit: 1,
   intervalMs: 1000,
   retries: 3,
 });

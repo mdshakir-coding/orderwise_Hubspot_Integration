@@ -1,6 +1,6 @@
 import express from "express";
 
-import { getCompanies } from "../services/orderwise.service.js";
+import { getCompanies } from "./services/orderwise.service.js";
 
 const app = express();
 

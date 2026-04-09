@@ -136,10 +136,9 @@ async function getCompanies(retry = true) {
       }
 
       try {
-        // await ProcessCompanies(data);
-        await findActivity(data);
+        await ProcessCompanies(data);
       } catch (error) {
-        logger.error("Error syncing contacts:", error);
+        logger.error("Error syncing in ProcessCompanies:", error);
       }
 
       // Update lastId for the next pagination batch
