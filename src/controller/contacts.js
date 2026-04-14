@@ -251,6 +251,15 @@ async function processContacts(company, hubspotCompanyId) {
             contact
           )}: ${JSON.stringify(contact, null, 2)}`
         );
+
+        let email = contact.email ? contact.email.trim().toLowerCase() : null;
+
+        if (!email || !email.includes("@")) {
+          logger.warn(
+            `Skipping contact ${contact.id} due to missing or invalid email: ${email}`
+          );
+          continue;
+        }
         // Contact Payload Mapping
         const payload = mapContactsToHubspot(contact, company);
         logger.info(`Contact Payload:\n${JSON.stringify(payload, null, 2)}`);

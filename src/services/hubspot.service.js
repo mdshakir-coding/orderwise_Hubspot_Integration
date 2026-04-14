@@ -339,7 +339,7 @@ async function updateObject(object, id, payload) {
       ? `${error.response.status} - ${JSON.stringify(error.response.data)}`
       : error.message;
 
-    logger.error(`Error updating ${object} with ID ${id}: ${errorMsg}`);
+    logger.error(`Error updating ${object} with ID ${id}: ${errorMsg}`, error);
     return null;
   }
 }

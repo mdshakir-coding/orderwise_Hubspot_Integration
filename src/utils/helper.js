@@ -169,20 +169,14 @@ function mapContactsToHubspot(c, item) {
 
   return {
     properties: {
-      orderwiseid: c?.id || null,
-
+      orderwiseid: c?.id ? String(c.id) : null, // Force string to avoid ID type mismatches
       firstname: nameParts[0] || null,
-      lastname: nameParts.slice(1).join(" ") || null,
-      //  firstname: c?.name || null,
-      // lastname: c?.name ||null,
+      lastname: nameParts.length > 1 ? nameParts.slice(1).join(" ") : null,
       phone: c?.telephone || null,
-      email: extractValidEmail(c?.email),
+      email: extractValidEmail(c?.email) || null, // Ensure a fallback null
       company: c?.companyId || null,
       mobilephone: c?.mobile || null,
       fax: c?.fax || null,
-
-      // company: item?.id || null,
-      // compnayOrderwiseId: company.properties.orderwiseid,
     },
   };
 }
