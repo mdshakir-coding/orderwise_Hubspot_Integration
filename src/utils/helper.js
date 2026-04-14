@@ -437,7 +437,40 @@ function isLastAmended(lastAmendedFromServer, lastSyncFromFile) {
   return amendedDate > lastSyncFromFile;
 }
 
+function getCompanyDifferences(hubspot, payload) {
+  const hs = hubspot.properties;
+  const incoming = payload.properties;
+  const differences = {};
+
+  const fields = [
+    "orderwiseid",
+    "domain",
+    "phone",
+    "address",
+    "address2",
+    "city",
+    "zip",
+    "state",
+    "name",
+  ];
+
+  fields.forEach((field) => {
+    const hsVal = String(hs[field] || "").trim();
+    const newVal = String(incoming[field] || "").trim();
+
+    if (hsVal !== newVal) {
+      differences[field] = {
+        from: hsVal,
+        to: newVal,
+      };
+    }
+  });
+
+  return differences;
+}
+
 export {
+  getCompanyDifferences,
   getLastSync,
   updateLastSync,
   isLastAmended,

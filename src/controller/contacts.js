@@ -33,6 +33,7 @@ import {
   isRecordUpToDate,
   isLastAmended,
   getLastSync,
+  getCompanyDifferences,
 } from "../utils/helper.js";
 
 /**
@@ -51,43 +52,62 @@ import {
  */
 async function upsertCompany(company) {
   try {
-    logger.info(
-      `Processing orderwise company ${JSON.stringify(company, null, 2)}`
-    );
+    logger.info(`Processing OrderWise ID: ${JSON.stringify(company, null, 2)}`);
 
     const payload = companyPayload(company);
 
-    const properties = [
+    // IMPORTANT: Ensure "name" and other compared fields are in this list!
+    const propertiesToFetch = [
       "orderwiseid",
       "domain",
+      "phone",
       "address",
       "address2",
       "city",
       "zip",
       "state",
-      "country",
-      "phone",
+      "name",
     ];
 
     const searchResult = await searchObjectByKey(
       "companies",
       "orderwiseid",
       company.id,
-      properties
+      propertiesToFetch
     );
 
     if (searchResult) {
       const companyId = searchResult.id;
 
-      // ⭐ Compare before updating
-      const same = isCompanySame(searchResult, payload);
+      logger.info(
+        `Found existing company ${JSON.stringify(searchResult)}`,
+        null,
+        2
+      );
 
-      if (same) {
-        logger.info(`Company already up-to-date: ${companyId}`);
-        return companyId; // 🚀 RETURN WITHOUT UPDATE
+      // Check for actual differences
+      const diffs = getCompanyDifferences(searchResult, payload);
+      const changedFields = Object.keys(diffs);
+
+      logger.info(
+        `Differences found for Company ${companyId}:`,
+        JSON.stringify(diffs, null, 2)
+      );
+
+      if (changedFields.length === 0) {
+        logger.info(
+          `No changes detected for Company ${companyId}. Skipping update.`
+        );
+        return companyId;
       }
 
-      logger.info("Company changed → updating");
+      // Log exactly what is changing
+      logger.info(`Changes detected for Company ${companyId}:`);
+      changedFields.forEach((field) => {
+        logger.info(
+          `  [${field}]: "${diffs[field].from}" -> "${diffs[field].to}"`
+        );
+      });
 
       const updatedCompany = await updateObject(
         "companies",
@@ -95,14 +115,13 @@ async function upsertCompany(company) {
         payload
       );
 
+      logger.info(`Successfully updated company ${updatedCompany.id}`);
       return updatedCompany.id;
     }
 
-    // create new company
+    // Create new company logic...
     const createdCompany = await createObject("companies", payload);
-
-    logger.info(`Created Company: ${createdCompany.id}`);
-
+    logger.info(`Created New Company: ${createdCompany.id}`);
     return createdCompany.id;
   } catch (error) {
     logger.error("Error upserting company:", error.message);
