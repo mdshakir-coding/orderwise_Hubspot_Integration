@@ -200,7 +200,7 @@ function isCompanySame(hubspot, payload) {
     "city",
     "zip",
     "state",
-    "country",
+    "name",
   ];
 
   return fields.every((field) => {
