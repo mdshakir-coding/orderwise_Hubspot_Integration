@@ -7,10 +7,10 @@ import { updateLastSync } from "../utils/helper.js";
 import { getCompanies } from "../services/orderwise.service.js";
 
 let isRunning = false; // Flag to prevent overlapping executions
-const scheduler = "30 11 * * *"; // Run at 4:30 PM
+const scheduler = "0 */8 * * *"; // Run every 8 hours at minute 0 (e.g., 12:00 AM, 8:00 AM, 4:00 PM)
 
 logger.info(
-  `Daily Scheduler Initialized.It will run everyday at 4 : 30 PM or Cron : ${scheduler}`
+  `Daily Scheduler Initialized.It will every 8 hours at minute 0, Scheduler : ${scheduler}`
 );
 
 cron.schedule(
