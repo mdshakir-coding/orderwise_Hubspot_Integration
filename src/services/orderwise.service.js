@@ -136,6 +136,7 @@ async function getCompanies(retry = true) {
       }
 
       try {
+        logger.info(`Fetched batch of Total: ${data.length} processing...`);
         await ProcessCompanies(data);
       } catch (error) {
         logger.error("Error syncing in ProcessCompanies:", error);
@@ -143,8 +144,6 @@ async function getCompanies(retry = true) {
 
       // Update lastId for the next pagination batch
       lastId = data[data.length - 1].id;
-
-      logger.info(`Fetched batch. Total: ${data.length}`);
     }
   } catch (error) {
     // Axios errors have a helpful 'response' object
