@@ -16,6 +16,7 @@ import {
   associateContactToCompany,
   upsertHubSpotObject,
   // syncEmailWithLogging,
+  searchContactInHubspot,
 } from "../services/hubspot.service.js";
 import { createContactCompanyAssociations } from "../services/hubspot.service.js";
 import { fetchOrderwiseActivities } from "../services/orderwise.service.js";
@@ -205,12 +206,19 @@ async function upsertContact(objectType, searchKey, searchValue, payload) {
       logger.info(
         `ID search failed for ${searchValue}, searching by email: ${payload.properties.email}`
       );
-      searchResult = await searchObjectByKey(
+      searchResult = await searchContactInHubspot(
         objectType,
         "email",
         payload.properties.email,
         contactProperties
       );
+
+      if (searchResult && searchResult.length > 1) {
+        logger.warn(`Multiple contacts found for ${searchValue}. Skipping.`);
+        return null;
+      } else {
+        searchResult = searchResult[0];
+      }
     }
 
     // logger.info(`Search Result:\n${JSON.stringify(searchResult, null, 2)}`);

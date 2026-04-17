@@ -598,7 +598,65 @@ async function createHubspotEmailIfValid(activity, payload) {
   }
 }
 
+async function searchContactInHubspot(object, key, value, properties) {
+  if (!object || !key || !value) {
+    logger.error(
+      `Missing search parameters → object:${object}, key:${key}, value:${value}`
+    );
+    return null;
+  }
+
+  const apiUrl = `${process.env.HUBSPOT_API_URL}/${object}/search`;
+
+  try {
+    const response = await hubspotExecutor(
+      () => {
+        return axios.post(
+          apiUrl,
+          {
+            filterGroups: [
+              {
+                filters: [
+                  {
+                    propertyName: key,
+                    operator: "EQ",
+                    value: value,
+                  },
+                ],
+              },
+            ],
+            properties,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      },
+      { name: "searchObjectByKey" }
+    );
+
+    // Axios stores the parsed JSON response in the 'data' property
+    const data = response.data;
+    return data.results?.length > 0 ? data.results : null;
+  } catch (error) {
+    // Axios provides the error response details in error.response
+    if (error.response) {
+      logger.error(
+        `HubSpot Search Error: ${error.response.status} - ${JSON.stringify(
+          error.response.data
+        )}`
+      );
+    } else {
+      logger.error("Error in searchObjectByKey:", error.message);
+    }
+    return null;
+  }
+}
 export {
+  searchContactInHubspot,
   searchObjectByKey,
   createObject,
   updateObject,
