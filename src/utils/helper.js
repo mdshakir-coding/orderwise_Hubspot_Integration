@@ -114,31 +114,107 @@ function cleanProps(obj) {
 //   "availableToSpend": 50000,
 //   "balance": 0
 // }
+// function companyPayload(item = {}) {
+//   let domain = null;
+
+//   // 1. Get the actual CLEAN email from your updated function
+//   const cleanEmail = extractValidEmailForDomain(item.statementEmail);
+
+//   // 2. If a clean email was found, extract the domain
+//   if (cleanEmail) {
+//     const cleanDomain = cleanEmail.split("@")[1];
+
+//     const freeDomains = [
+//       "gmail.com",
+//       "yahoo.com",
+//       "hotmail.com",
+//       "outlook.com",
+//       "icloud.com",
+//       "btinternet.com",
+//       "live.com",
+//       "aol.com",
+//     ];
+
+//     if (!freeDomains.includes(cleanDomain.toLowerCase())) {
+//       domain = cleanDomain;
+//     }
+//   }
+
+//   // 3. Build the base payload WITHOUT the domain property
+//   const payload = {
+//     properties: {
+//       orderwiseid: item?.id || null,
+//       name: item?.statementName || null,
+//       phone: item?.statementTelephone || null,
+//       address: item?.statementAddress1 || null,
+//       address2: item?.statementAddress2 || null,
+//       city: item?.statementTown || null,
+//       country: item?.statementCounty || null,
+//       state: item?.statementCountryCode || null,
+//       zip: item?.statementPostcode || null,
+//       // fax: item?.statementFax || null,
+//     },
+//   };
+
+//   // 4. Conditionally add the domain ONLY if a valid one was approved
+//   if (domain) {
+//     payload.properties.domain = domain;
+//   }
+
+//   return payload;
+// }
 function companyPayload(item = {}) {
   let domain = null;
 
-  if (extractValidEmail(item.statementEmail?.trim())) {
-    domain = item.statementEmail.trim().split("@")[1];
-  } else {
-    domain = "";
+  const cleanEmail = extractValidEmailForDomain(item.statementEmail);
+
+  if (cleanEmail && cleanEmail.includes("@")) {
+    const parts = cleanEmail.split("@");
+    const cleanDomain = parts[1]?.trim()?.toLowerCase();
+
+    const freeDomains = new Set([
+      "gmail.com",
+      "yahoo.com",
+      "hotmail.com",
+      "outlook.com",
+      "icloud.com",
+      "btinternet.com",
+      "live.com",
+      "aol.com",
+      "proton.me",
+      "protonmail.com",
+      "zoho.com",
+    ]);
+
+    if (
+      cleanDomain &&
+      cleanDomain.includes(".") &&
+      !freeDomains.has(cleanDomain)
+    ) {
+      domain = cleanDomain;
+    }
   }
-  return {
+
+  const payload = {
     properties: {
       orderwiseid: item?.id || null,
       name: item?.statementName || null,
       phone: item?.statementTelephone || null,
-      domain,
       address: item?.statementAddress1 || null,
       address2: item?.statementAddress2 || null,
       city: item?.statementTown || null,
-      country: item?.statementCounty || null,
-      state: item?.statementCountryCode || null,
+      country: item?.statementCounty || null, // verify mapping
+      state: item?.statementCountryCode || null, // verify mapping
       zip: item?.statementPostcode || null,
-      // fax: item?.statementFax || null,
     },
   };
-}
 
+  if (domain) {
+    payload.properties.domain = domain;
+  }
+
+  return payload;
+}
 // company payload mapping (if needed in the future)
 
 function extractValidEmail(email) {
@@ -160,6 +236,31 @@ function extractValidEmail(email) {
   return match ? match[0] : email.trim();
 }
 
+function extractValidEmailForDomain(email) {
+  if (!email) return "";
+
+  // 1. Handle Arrays
+  if (Array.isArray(email)) {
+    email = email[0];
+  }
+
+  // 2. Handle Objects
+  if (typeof email === "object") {
+    email = email.value || email.email || "";
+  }
+
+  // 3. Type Safety
+  if (typeof email !== "string") {
+    return "";
+  }
+
+  // 4. Extract the first valid email found in the string
+  // Added '+' to support emails like name+tag@domain.com
+  const match = email.match(/[\w.+-]+@[\w.-]+\.\w+/);
+
+  // FIX: If no match is found, return an empty string, NOT the original string.
+  return match ? match[0] : "";
+}
 // contact payload mapping
 function mapContactsToHubspot(c, item) {
   // Check if contact exists

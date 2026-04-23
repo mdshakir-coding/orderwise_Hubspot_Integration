@@ -1,54 +1,117 @@
+import { createLogger, format, transports } from "winston";
+import "winston-daily-rotate-file";
 
+const { combine, timestamp, printf, errors, colorize } = format;
 
-import winston from "winston";
-
-const { combine, timestamp, printf, colorize, errors } = winston.format;
-
-const timeFormat = "YYYY-MM-DD hh:mm:ss a";
-
-const consoleFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} | ${level} | ${stack || message}`;
-});
-
-const fileFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} | ${level} | ${stack || message}`;
-});
-
-const logger = winston.createLogger({
-  level: "debug",
-
-  format: combine(errors({ stack: true })),
-
-  transports: [
-    new winston.transports.File({
-      filename: "logs/error.log",
-      level: "error",
-      format: combine(
-        timestamp({ format: timeFormat }),
-        fileFormat
-      ),
+// Custom timestamp (12-hour)
+const customTimestamp = timestamp({
+  format: () =>
+    new Date().toLocaleString("en-IN", {
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: true,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     }),
-
-    new winston.transports.File({
-      filename: "logs/combined.log",
-      format: combine(
-        timestamp({ format: timeFormat }),
-        fileFormat
-      ),
-    }),
-  ],
 });
 
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: combine(
-        colorize({ all: true }), // ONLY console gets colors
-        timestamp({ format: timeFormat }),
-        consoleFormat
-      ),
-    })
-  );
-}
+const consoleFormat = printf(
+  ({ level, message, timestamp, stack, ...meta }) => {
+    const metaString =
+      meta && Object.keys(meta).length
+        ? `\n${JSON.stringify(meta, null, 2)}`
+        : "";
+
+    return `${timestamp}  [${level}] - ${stack || message}${metaString}`;
+  }
+);
+
+const fileFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
+  const metaString =
+    meta && Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
+
+  return `${timestamp}  [${level}] - ${stack || message}${metaString}`;
+});
+
+const productionLogger = () => {
+  const dailyError = new transports.DailyRotateFile({
+    filename: "logs/error-%DATE%.log",
+    datePattern: "YYYY-MM-DD",
+    level: "error",
+    zippedArchive: true,
+    maxSize: "10m",
+    maxFiles: "28d", // keep 28 days of logs
+  });
+
+  const dailyCombined = new transports.DailyRotateFile({
+    filename: "logs/combined-%DATE%.log",
+    datePattern: "YYYY-MM-DD",
+    level: process.env.LOG_LEVEL || "info", // logs info, warn, debug
+    zippedArchive: true,
+    maxSize: "10m",
+    maxFiles: "28d",
+  });
+
+  return createLogger({
+    level: process.env.LOG_LEVEL || "info",
+    format: combine(customTimestamp, errors({ stack: true })),
+    defaultMeta: { service: "serviceM8-hubspot-integration" },
+    transports: [
+      dailyCombined, // all logs
+      dailyError, // error-only logs
+      new transports.Console({
+        format: combine(customTimestamp, consoleFormat),
+        // format: combine(colorize(), customTimestamp, consoleFormat),
+        level: "info",
+        handleExceptions: true,
+        handleRejections: true,
+      }),
+    ],
+    exceptionHandlers: [
+      new transports.DailyRotateFile({
+        filename: "logs/exceptions-%DATE%.log",
+        datePattern: "YYYY-MM-DD",
+        maxSize: "10m",
+        maxFiles: "14d",
+        zippedArchive: true,
+      }),
+    ],
+    rejectionHandlers: [
+      new transports.DailyRotateFile({
+        filename: "logs/rejections-%DATE%.log",
+        datePattern: "YYYY-MM-DD",
+        maxSize: "10m",
+        maxFiles: "14d",
+        zippedArchive: true,
+      }),
+    ],
+  });
+};
+
+// Select logger based on environment
+const logger =
+  process.env.NODE_ENV === "production"
+    ? productionLogger()
+    : createLogger({
+        level: "info",
+        format: combine(customTimestamp, errors({ stack: true })),
+        transports: [
+          new transports.Console({
+            format: combine(colorize(), customTimestamp, consoleFormat),
+            handleExceptions: true,
+            handleRejections: true,
+          }),
+          new transports.File({
+            filename: "logs/combined.log",
+            format: fileFormat,
+            level: "debug",
+            maxsize: 10 * 1024 * 1024, // 10MB
+            handleExceptions: true,
+            handleRejections: true,
+          }),
+        ],
+      });
 
 export default logger;

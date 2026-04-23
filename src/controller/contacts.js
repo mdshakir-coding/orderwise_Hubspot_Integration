@@ -55,7 +55,7 @@ async function upsertCompany(company) {
   try {
     logger.info(`Processing OrderWise ID: ${JSON.stringify(company, null, 2)}`);
 
-    const payload = companyPayload(company);
+    let payload = companyPayload(company);
 
     // IMPORTANT: Ensure "name" and other compared fields are in this list!
     const propertiesToFetch = [
@@ -85,6 +85,10 @@ async function upsertCompany(company) {
         null,
         2
       );
+
+      // remove domail from payload in case of update
+      const { domain, ...newPayload } = payload;
+      payload = newPayload;
 
       // Check for actual differences
       const diffs = getCompanyDifferences(searchResult, payload);
