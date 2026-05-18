@@ -103,14 +103,14 @@ const logger =
             handleExceptions: true,
             handleRejections: true,
           }),
-          new transports.File({
-            filename: "logs/combined.log",
-            format: fileFormat,
-            level: "debug",
-            maxsize: 10 * 1024 * 1024, // 10MB
-            handleExceptions: true,
-            handleRejections: true,
-          }),
+          // new transports.File({
+          //   filename: "logs/combined.log",
+          //   format: fileFormat,
+          //   level: "debug",
+          //   maxsize: 10 * 1024 * 1024, // 10MB
+          //   handleExceptions: true,
+          //   handleRejections: true,
+          // }),
         ],
       });
 
